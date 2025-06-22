@@ -1,0 +1,659 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="Хранилище cafe_barModel" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="Autorization">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" Nullable="false" />
+          <Property Name="Login" Type="varchar" MaxLength="128" />
+          <Property Name="PasswordHash" Type="nvarchar" MaxLength="128" Nullable="false" />
+          <Property Name="Salt" Type="nvarchar" MaxLength="128" Nullable="false" />
+        </EntityType>
+        <EntityType Name="CategoriesMenu">
+          <Key>
+            <PropertyRef Name="id_category" />
+          </Key>
+          <Property Name="id_category" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="title_category" Type="varchar" MaxLength="50" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Clients">
+          <Key>
+            <PropertyRef Name="id_client" />
+          </Key>
+          <Property Name="id_client" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="name_client" Type="varchar" MaxLength="100" Nullable="false" />
+          <Property Name="ph_numb_client" Type="varchar" MaxLength="11" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Employees">
+          <Key>
+            <PropertyRef Name="id_employee" />
+          </Key>
+          <Property Name="id_employee" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="name_employee" Type="varchar" MaxLength="100" Nullable="false" />
+          <Property Name="ph_number_emp" Type="varchar" MaxLength="11" Nullable="false" />
+          <Property Name="post_emp_fk" Type="int" Nullable="false" />
+          <Property Name="email" Type="varchar" MaxLength="100" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Menu">
+          <Key>
+            <PropertyRef Name="id_menu_item" />
+          </Key>
+          <Property Name="id_menu_item" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="item_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="id_category_fk" Type="int" Nullable="false" />
+          <Property Name="cost_item" Type="decimal" Precision="10" Scale="2" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Order_details">
+          <Key>
+            <PropertyRef Name="id_order_details" />
+          </Key>
+          <Property Name="id_order_details" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="id_order_fk" Type="int" Nullable="false" />
+          <Property Name="id_menu_item_fk" Type="int" Nullable="false" />
+          <Property Name="quantity" Type="smallint" Nullable="false" />
+          <Property Name="unit_price" Type="decimal" Precision="10" Scale="2" Nullable="false" />
+          <Property Name="subtotal" Type="decimal" Precision="16" Scale="2" StoreGeneratedPattern="Computed" />
+        </EntityType>
+        <EntityType Name="Orders">
+          <Key>
+            <PropertyRef Name="id_order" />
+          </Key>
+          <Property Name="id_order" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="id_cli_fk" Type="int" Nullable="false" />
+          <Property Name="id_emp_fk" Type="int" Nullable="false" />
+          <Property Name="order_date" Type="datetime" Nullable="false" />
+          <Property Name="totalAmount" Type="decimal" Precision="10" Scale="2" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Post">
+          <Key>
+            <PropertyRef Name="id_post" />
+          </Key>
+          <Property Name="id_post" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="title_post" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="accessLevel" Type="tinyint" Nullable="false" />
+        </EntityType>
+        <!--Ошибки, обнаруженные при создании:
+предупреждение 6002: В таблице или представлении "cafe_bar.dbo.Regular_Clients" не определен первичный ключ. Ключ был выведен, а определение таблицы или представления было создано в режиме только для чтения.-->
+        <EntityType Name="Regular_Clients">
+          <Key>
+            <PropertyRef Name="id_reg_client_fk" />
+          </Key>
+          <Property Name="id_reg_client_fk" Type="int" Nullable="false" />
+          <Property Name="discount_rate" Type="decimal" Precision="5" Scale="2" />
+          <Property Name="total_spent" Type="decimal" Precision="12" Scale="2" />
+        </EntityType>
+        <EntityType Name="Reservation">
+          <Key>
+            <PropertyRef Name="id_reservation" />
+          </Key>
+          <Property Name="id_reservation" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="id_client_fk" Type="int" Nullable="false" />
+          <Property Name="id_employee_fk" Type="int" Nullable="false" />
+          <Property Name="reservation_date" Type="datetime" Nullable="false" />
+          <Property Name="guests_count" Type="tinyint" Nullable="false" />
+        </EntityType>
+        <Association Name="FK__Employees__email__3D5E1FD2">
+          <End Role="Post" Type="Self.Post" Multiplicity="1" />
+          <End Role="Employees" Type="Self.Employees" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Post">
+              <PropertyRef Name="id_post" />
+            </Principal>
+            <Dependent Role="Employees">
+              <PropertyRef Name="post_emp_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Menu__id_categor__4BAC3F29">
+          <End Role="CategoriesMenu" Type="Self.CategoriesMenu" Multiplicity="1" />
+          <End Role="Menu" Type="Self.Menu" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="CategoriesMenu">
+              <PropertyRef Name="id_category" />
+            </Principal>
+            <Dependent Role="Menu">
+              <PropertyRef Name="id_category_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Order_det__id_me__5441852A">
+          <End Role="Menu" Type="Self.Menu" Multiplicity="1" />
+          <End Role="Order_details" Type="Self.Order_details" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Menu">
+              <PropertyRef Name="id_menu_item" />
+            </Principal>
+            <Dependent Role="Order_details">
+              <PropertyRef Name="id_menu_item_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Order_det__id_or__534D60F1">
+          <End Role="Orders" Type="Self.Orders" Multiplicity="1" />
+          <End Role="Order_details" Type="Self.Order_details" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Orders">
+              <PropertyRef Name="id_order" />
+            </Principal>
+            <Dependent Role="Order_details">
+              <PropertyRef Name="id_order_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Orders__id_cli_f__4E88ABD4">
+          <End Role="Clients" Type="Self.Clients" Multiplicity="1" />
+          <End Role="Orders" Type="Self.Orders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Clients">
+              <PropertyRef Name="id_client" />
+            </Principal>
+            <Dependent Role="Orders">
+              <PropertyRef Name="id_cli_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Orders__id_emp_f__4F7CD00D">
+          <End Role="Employees" Type="Self.Employees" Multiplicity="1" />
+          <End Role="Orders" Type="Self.Orders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Employees">
+              <PropertyRef Name="id_employee" />
+            </Principal>
+            <Dependent Role="Orders">
+              <PropertyRef Name="id_emp_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Regular_C__id_re__4316F928">
+          <End Role="Clients" Type="Self.Clients" Multiplicity="1" />
+          <End Role="Regular_Clients" Type="Self.Regular_Clients" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Clients">
+              <PropertyRef Name="id_client" />
+            </Principal>
+            <Dependent Role="Regular_Clients">
+              <PropertyRef Name="id_reg_client_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Reservati__id_cl__45F365D3">
+          <End Role="Clients" Type="Self.Clients" Multiplicity="1" />
+          <End Role="Reservation" Type="Self.Reservation" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Clients">
+              <PropertyRef Name="id_client" />
+            </Principal>
+            <Dependent Role="Reservation">
+              <PropertyRef Name="id_client_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Reservati__id_em__46E78A0C">
+          <End Role="Employees" Type="Self.Employees" Multiplicity="1" />
+          <End Role="Reservation" Type="Self.Reservation" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Employees">
+              <PropertyRef Name="id_employee" />
+            </Principal>
+            <Dependent Role="Reservation">
+              <PropertyRef Name="id_employee_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="Хранилище cafe_barModelContainer">
+          <EntitySet Name="Autorization" EntityType="Self.Autorization" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="CategoriesMenu" EntityType="Self.CategoriesMenu" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Clients" EntityType="Self.Clients" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Employees" EntityType="Self.Employees" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Menu" EntityType="Self.Menu" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Order_details" EntityType="Self.Order_details" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Orders" EntityType="Self.Orders" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Post" EntityType="Self.Post" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Reservation" EntityType="Self.Reservation" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Regular_Clients" EntityType="Self.Regular_Clients" store:Type="Tables" store:Schema="dbo">
+            <DefiningQuery>SELECT 
+[Regular_Clients].[id_reg_client_fk] AS [id_reg_client_fk], 
+[Regular_Clients].[discount_rate] AS [discount_rate], 
+[Regular_Clients].[total_spent] AS [total_spent]
+FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
+          </EntitySet>
+          <AssociationSet Name="FK__Employees__email__3D5E1FD2" Association="Self.FK__Employees__email__3D5E1FD2">
+            <End Role="Post" EntitySet="Post" />
+            <End Role="Employees" EntitySet="Employees" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Menu__id_categor__4BAC3F29" Association="Self.FK__Menu__id_categor__4BAC3F29">
+            <End Role="CategoriesMenu" EntitySet="CategoriesMenu" />
+            <End Role="Menu" EntitySet="Menu" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Order_det__id_me__5441852A" Association="Self.FK__Order_det__id_me__5441852A">
+            <End Role="Menu" EntitySet="Menu" />
+            <End Role="Order_details" EntitySet="Order_details" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Order_det__id_or__534D60F1" Association="Self.FK__Order_det__id_or__534D60F1">
+            <End Role="Orders" EntitySet="Orders" />
+            <End Role="Order_details" EntitySet="Order_details" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Orders__id_cli_f__4E88ABD4" Association="Self.FK__Orders__id_cli_f__4E88ABD4">
+            <End Role="Clients" EntitySet="Clients" />
+            <End Role="Orders" EntitySet="Orders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Orders__id_emp_f__4F7CD00D" Association="Self.FK__Orders__id_emp_f__4F7CD00D">
+            <End Role="Employees" EntitySet="Employees" />
+            <End Role="Orders" EntitySet="Orders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Regular_C__id_re__4316F928" Association="Self.FK__Regular_C__id_re__4316F928">
+            <End Role="Clients" EntitySet="Clients" />
+            <End Role="Regular_Clients" EntitySet="Regular_Clients" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Reservati__id_cl__45F365D3" Association="Self.FK__Reservati__id_cl__45F365D3">
+            <End Role="Clients" EntitySet="Clients" />
+            <End Role="Reservation" EntitySet="Reservation" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Reservati__id_em__46E78A0C" Association="Self.FK__Reservati__id_em__46E78A0C">
+            <End Role="Employees" EntitySet="Employees" />
+            <End Role="Reservation" EntitySet="Reservation" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="cafe_barModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="Autorization">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" />
+          <Property Name="Login" Type="String" MaxLength="128" FixedLength="false" Unicode="false" />
+          <Property Name="PasswordHash" Type="String" Nullable="false" MaxLength="128" FixedLength="false" Unicode="true" />
+          <Property Name="Salt" Type="String" Nullable="false" MaxLength="128" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="CategoriesMenu">
+          <Key>
+            <PropertyRef Name="id_category" />
+          </Key>
+          <Property Name="id_category" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="title_category" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <NavigationProperty Name="Menu" Relationship="Self.FK__Menu__id_categor__4BAC3F29" FromRole="CategoriesMenu" ToRole="Menu" />
+        </EntityType>
+        <EntityType Name="Clients">
+          <Key>
+            <PropertyRef Name="id_client" />
+          </Key>
+          <Property Name="id_client" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="name_client" Type="String" MaxLength="100" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="ph_numb_client" Type="String" MaxLength="11" FixedLength="false" Unicode="false" Nullable="false" />
+          <NavigationProperty Name="Orders" Relationship="Self.FK__Orders__id_cli_f__4E88ABD4" FromRole="Clients" ToRole="Orders" />
+          <NavigationProperty Name="Regular_Clients" Relationship="Self.FK__Regular_C__id_re__4316F928" FromRole="Clients" ToRole="Regular_Clients" />
+          <NavigationProperty Name="Reservation" Relationship="Self.FK__Reservati__id_cl__45F365D3" FromRole="Clients" ToRole="Reservation" />
+        </EntityType>
+        <EntityType Name="Employees">
+          <Key>
+            <PropertyRef Name="id_employee" />
+          </Key>
+          <Property Name="id_employee" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="name_employee" Type="String" MaxLength="100" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="ph_number_emp" Type="String" MaxLength="11" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="post_emp_fk" Type="Int32" Nullable="false" />
+          <Property Name="email" Type="String" MaxLength="100" FixedLength="false" Unicode="false" Nullable="false" />
+          <NavigationProperty Name="Post" Relationship="Self.FK__Employees__email__3D5E1FD2" FromRole="Employees" ToRole="Post" />
+          <NavigationProperty Name="Orders" Relationship="Self.FK__Orders__id_emp_f__4F7CD00D" FromRole="Employees" ToRole="Orders" />
+          <NavigationProperty Name="Reservation" Relationship="Self.FK__Reservati__id_em__46E78A0C" FromRole="Employees" ToRole="Reservation" />
+        </EntityType>
+        <EntityType Name="Menu">
+          <Key>
+            <PropertyRef Name="id_menu_item" />
+          </Key>
+          <Property Name="id_menu_item" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="item_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="id_category_fk" Type="Int32" Nullable="false" />
+          <Property Name="cost_item" Type="Decimal" Precision="10" Scale="2" Nullable="false" />
+          <NavigationProperty Name="CategoriesMenu" Relationship="Self.FK__Menu__id_categor__4BAC3F29" FromRole="Menu" ToRole="CategoriesMenu" />
+          <NavigationProperty Name="Order_details" Relationship="Self.FK__Order_det__id_me__5441852A" FromRole="Menu" ToRole="Order_details" />
+        </EntityType>
+        <EntityType Name="Order_details">
+          <Key>
+            <PropertyRef Name="id_order_details" />
+          </Key>
+          <Property Name="id_order_details" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="id_order_fk" Type="Int32" Nullable="false" />
+          <Property Name="id_menu_item_fk" Type="Int32" Nullable="false" />
+          <Property Name="quantity" Type="Int16" Nullable="false" />
+          <Property Name="unit_price" Type="Decimal" Precision="10" Scale="2" Nullable="false" />
+          <Property Name="subtotal" Type="Decimal" Precision="16" Scale="2" annotation:StoreGeneratedPattern="Computed" />
+          <NavigationProperty Name="Menu" Relationship="Self.FK__Order_det__id_me__5441852A" FromRole="Order_details" ToRole="Menu" />
+          <NavigationProperty Name="Orders" Relationship="Self.FK__Order_det__id_or__534D60F1" FromRole="Order_details" ToRole="Orders" />
+        </EntityType>
+        <EntityType Name="Orders">
+          <Key>
+            <PropertyRef Name="id_order" />
+          </Key>
+          <Property Name="id_order" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="id_cli_fk" Type="Int32" Nullable="false" />
+          <Property Name="id_emp_fk" Type="Int32" Nullable="false" />
+          <Property Name="order_date" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="totalAmount" Type="Decimal" Precision="10" Scale="2" Nullable="false" />
+          <NavigationProperty Name="Clients" Relationship="Self.FK__Orders__id_cli_f__4E88ABD4" FromRole="Orders" ToRole="Clients" />
+          <NavigationProperty Name="Employees" Relationship="Self.FK__Orders__id_emp_f__4F7CD00D" FromRole="Orders" ToRole="Employees" />
+          <NavigationProperty Name="Order_details" Relationship="Self.FK__Order_det__id_or__534D60F1" FromRole="Orders" ToRole="Order_details" />
+        </EntityType>
+        <EntityType Name="Post">
+          <Key>
+            <PropertyRef Name="id_post" />
+          </Key>
+          <Property Name="id_post" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="title_post" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="accessLevel" Type="Byte" Nullable="false" />
+          <NavigationProperty Name="Employees" Relationship="Self.FK__Employees__email__3D5E1FD2" FromRole="Post" ToRole="Employees" />
+        </EntityType>
+        <EntityType Name="Reservation">
+          <Key>
+            <PropertyRef Name="id_reservation" />
+          </Key>
+          <Property Name="id_reservation" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="id_client_fk" Type="Int32" Nullable="false" />
+          <Property Name="id_employee_fk" Type="Int32" Nullable="false" />
+          <Property Name="reservation_date" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="guests_count" Type="Byte" Nullable="false" />
+          <NavigationProperty Name="Clients" Relationship="Self.FK__Reservati__id_cl__45F365D3" FromRole="Reservation" ToRole="Clients" />
+          <NavigationProperty Name="Employees" Relationship="Self.FK__Reservati__id_em__46E78A0C" FromRole="Reservation" ToRole="Employees" />
+        </EntityType>
+        <EntityType Name="Regular_Clients">
+          <Key>
+            <PropertyRef Name="id_reg_client_fk" />
+          </Key>
+          <Property Name="id_reg_client_fk" Type="Int32" Nullable="false" />
+          <Property Name="discount_rate" Type="Decimal" Precision="5" Scale="2" />
+          <Property Name="total_spent" Type="Decimal" Precision="12" Scale="2" />
+          <NavigationProperty Name="Clients" Relationship="Self.FK__Regular_C__id_re__4316F928" FromRole="Regular_Clients" ToRole="Clients" />
+        </EntityType>
+        <Association Name="FK__Menu__id_categor__4BAC3F29">
+          <End Role="CategoriesMenu" Type="Self.CategoriesMenu" Multiplicity="1" />
+          <End Role="Menu" Type="Self.Menu" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="CategoriesMenu">
+              <PropertyRef Name="id_category" />
+            </Principal>
+            <Dependent Role="Menu">
+              <PropertyRef Name="id_category_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Orders__id_cli_f__4E88ABD4">
+          <End Role="Clients" Type="Self.Clients" Multiplicity="1" />
+          <End Role="Orders" Type="Self.Orders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Clients">
+              <PropertyRef Name="id_client" />
+            </Principal>
+            <Dependent Role="Orders">
+              <PropertyRef Name="id_cli_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Regular_C__id_re__4316F928">
+          <End Role="Clients" Type="Self.Clients" Multiplicity="1" />
+          <End Role="Regular_Clients" Type="Self.Regular_Clients" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Clients">
+              <PropertyRef Name="id_client" />
+            </Principal>
+            <Dependent Role="Regular_Clients">
+              <PropertyRef Name="id_reg_client_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Reservati__id_cl__45F365D3">
+          <End Role="Clients" Type="Self.Clients" Multiplicity="1" />
+          <End Role="Reservation" Type="Self.Reservation" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Clients">
+              <PropertyRef Name="id_client" />
+            </Principal>
+            <Dependent Role="Reservation">
+              <PropertyRef Name="id_client_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Employees__email__3D5E1FD2">
+          <End Role="Post" Type="Self.Post" Multiplicity="1" />
+          <End Role="Employees" Type="Self.Employees" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Post">
+              <PropertyRef Name="id_post" />
+            </Principal>
+            <Dependent Role="Employees">
+              <PropertyRef Name="post_emp_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Orders__id_emp_f__4F7CD00D">
+          <End Role="Employees" Type="Self.Employees" Multiplicity="1" />
+          <End Role="Orders" Type="Self.Orders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Employees">
+              <PropertyRef Name="id_employee" />
+            </Principal>
+            <Dependent Role="Orders">
+              <PropertyRef Name="id_emp_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Reservati__id_em__46E78A0C">
+          <End Role="Employees" Type="Self.Employees" Multiplicity="1" />
+          <End Role="Reservation" Type="Self.Reservation" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Employees">
+              <PropertyRef Name="id_employee" />
+            </Principal>
+            <Dependent Role="Reservation">
+              <PropertyRef Name="id_employee_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Order_det__id_me__5441852A">
+          <End Role="Menu" Type="Self.Menu" Multiplicity="1" />
+          <End Role="Order_details" Type="Self.Order_details" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Menu">
+              <PropertyRef Name="id_menu_item" />
+            </Principal>
+            <Dependent Role="Order_details">
+              <PropertyRef Name="id_menu_item_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Order_det__id_or__534D60F1">
+          <End Role="Orders" Type="Self.Orders" Multiplicity="1" />
+          <End Role="Order_details" Type="Self.Order_details" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Orders">
+              <PropertyRef Name="id_order" />
+            </Principal>
+            <Dependent Role="Order_details">
+              <PropertyRef Name="id_order_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="cafe_barEntities1" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Autorization" EntityType="Self.Autorization" />
+          <EntitySet Name="CategoriesMenu" EntityType="Self.CategoriesMenu" />
+          <EntitySet Name="Clients" EntityType="Self.Clients" />
+          <EntitySet Name="Employees" EntityType="Self.Employees" />
+          <EntitySet Name="Menu" EntityType="Self.Menu" />
+          <EntitySet Name="Order_details" EntityType="Self.Order_details" />
+          <EntitySet Name="Orders" EntityType="Self.Orders" />
+          <EntitySet Name="Post" EntityType="Self.Post" />
+          <EntitySet Name="Reservation" EntityType="Self.Reservation" />
+          <EntitySet Name="Regular_Clients" EntityType="Self.Regular_Clients" />
+          <AssociationSet Name="FK__Menu__id_categor__4BAC3F29" Association="Self.FK__Menu__id_categor__4BAC3F29">
+            <End Role="CategoriesMenu" EntitySet="CategoriesMenu" />
+            <End Role="Menu" EntitySet="Menu" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Orders__id_cli_f__4E88ABD4" Association="Self.FK__Orders__id_cli_f__4E88ABD4">
+            <End Role="Clients" EntitySet="Clients" />
+            <End Role="Orders" EntitySet="Orders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Regular_C__id_re__4316F928" Association="Self.FK__Regular_C__id_re__4316F928">
+            <End Role="Clients" EntitySet="Clients" />
+            <End Role="Regular_Clients" EntitySet="Regular_Clients" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Reservati__id_cl__45F365D3" Association="Self.FK__Reservati__id_cl__45F365D3">
+            <End Role="Clients" EntitySet="Clients" />
+            <End Role="Reservation" EntitySet="Reservation" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Employees__email__3D5E1FD2" Association="Self.FK__Employees__email__3D5E1FD2">
+            <End Role="Post" EntitySet="Post" />
+            <End Role="Employees" EntitySet="Employees" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Orders__id_emp_f__4F7CD00D" Association="Self.FK__Orders__id_emp_f__4F7CD00D">
+            <End Role="Employees" EntitySet="Employees" />
+            <End Role="Orders" EntitySet="Orders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Reservati__id_em__46E78A0C" Association="Self.FK__Reservati__id_em__46E78A0C">
+            <End Role="Employees" EntitySet="Employees" />
+            <End Role="Reservation" EntitySet="Reservation" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Order_det__id_me__5441852A" Association="Self.FK__Order_det__id_me__5441852A">
+            <End Role="Menu" EntitySet="Menu" />
+            <End Role="Order_details" EntitySet="Order_details" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Order_det__id_or__534D60F1" Association="Self.FK__Order_det__id_or__534D60F1">
+            <End Role="Orders" EntitySet="Orders" />
+            <End Role="Order_details" EntitySet="Order_details" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="Хранилище cafe_barModelContainer" CdmEntityContainer="cafe_barEntities1">
+          <EntitySetMapping Name="Autorization">
+            <EntityTypeMapping TypeName="cafe_barModel.Autorization">
+              <MappingFragment StoreEntitySet="Autorization">
+                <ScalarProperty Name="Salt" ColumnName="Salt" />
+                <ScalarProperty Name="PasswordHash" ColumnName="PasswordHash" />
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="Login" ColumnName="Login" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="CategoriesMenu">
+            <EntityTypeMapping TypeName="cafe_barModel.CategoriesMenu">
+              <MappingFragment StoreEntitySet="CategoriesMenu">
+                <ScalarProperty Name="id_category" ColumnName="id_category" />
+                <ScalarProperty Name="title_category" ColumnName="title_category" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Clients">
+            <EntityTypeMapping TypeName="cafe_barModel.Clients">
+              <MappingFragment StoreEntitySet="Clients">
+                <ScalarProperty Name="id_client" ColumnName="id_client" />
+                <ScalarProperty Name="name_client" ColumnName="name_client" />
+                <ScalarProperty Name="ph_numb_client" ColumnName="ph_numb_client" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Employees">
+            <EntityTypeMapping TypeName="cafe_barModel.Employees">
+              <MappingFragment StoreEntitySet="Employees">
+                <ScalarProperty Name="id_employee" ColumnName="id_employee" />
+                <ScalarProperty Name="name_employee" ColumnName="name_employee" />
+                <ScalarProperty Name="ph_number_emp" ColumnName="ph_number_emp" />
+                <ScalarProperty Name="post_emp_fk" ColumnName="post_emp_fk" />
+                <ScalarProperty Name="email" ColumnName="email" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Menu">
+            <EntityTypeMapping TypeName="cafe_barModel.Menu">
+              <MappingFragment StoreEntitySet="Menu">
+                <ScalarProperty Name="id_menu_item" ColumnName="id_menu_item" />
+                <ScalarProperty Name="item_name" ColumnName="item_name" />
+                <ScalarProperty Name="id_category_fk" ColumnName="id_category_fk" />
+                <ScalarProperty Name="cost_item" ColumnName="cost_item" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Order_details">
+            <EntityTypeMapping TypeName="cafe_barModel.Order_details">
+              <MappingFragment StoreEntitySet="Order_details">
+                <ScalarProperty Name="id_order_details" ColumnName="id_order_details" />
+                <ScalarProperty Name="id_order_fk" ColumnName="id_order_fk" />
+                <ScalarProperty Name="id_menu_item_fk" ColumnName="id_menu_item_fk" />
+                <ScalarProperty Name="quantity" ColumnName="quantity" />
+                <ScalarProperty Name="unit_price" ColumnName="unit_price" />
+                <ScalarProperty Name="subtotal" ColumnName="subtotal" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Orders">
+            <EntityTypeMapping TypeName="cafe_barModel.Orders">
+              <MappingFragment StoreEntitySet="Orders">
+                <ScalarProperty Name="id_order" ColumnName="id_order" />
+                <ScalarProperty Name="id_cli_fk" ColumnName="id_cli_fk" />
+                <ScalarProperty Name="id_emp_fk" ColumnName="id_emp_fk" />
+                <ScalarProperty Name="order_date" ColumnName="order_date" />
+                <ScalarProperty Name="totalAmount" ColumnName="totalAmount" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Post">
+            <EntityTypeMapping TypeName="cafe_barModel.Post">
+              <MappingFragment StoreEntitySet="Post">
+                <ScalarProperty Name="id_post" ColumnName="id_post" />
+                <ScalarProperty Name="title_post" ColumnName="title_post" />
+                <ScalarProperty Name="accessLevel" ColumnName="accessLevel" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Reservation">
+            <EntityTypeMapping TypeName="cafe_barModel.Reservation">
+              <MappingFragment StoreEntitySet="Reservation">
+                <ScalarProperty Name="id_reservation" ColumnName="id_reservation" />
+                <ScalarProperty Name="id_client_fk" ColumnName="id_client_fk" />
+                <ScalarProperty Name="id_employee_fk" ColumnName="id_employee_fk" />
+                <ScalarProperty Name="reservation_date" ColumnName="reservation_date" />
+                <ScalarProperty Name="guests_count" ColumnName="guests_count" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Regular_Clients">
+            <EntityTypeMapping TypeName="cafe_barModel.Regular_Clients">
+              <MappingFragment StoreEntitySet="Regular_Clients">
+                <ScalarProperty Name="id_reg_client_fk" ColumnName="id_reg_client_fk" />
+                <ScalarProperty Name="discount_rate" ColumnName="discount_rate" />
+                <ScalarProperty Name="total_spent" ColumnName="total_spent" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="false" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="true" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="Нет" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

@@ -1,0 +1,84 @@
+﻿<Window x:Class="material_design.Window2"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Просмотр таблиц" Height="450" Width="800"
+        WindowStartupLocation="CenterOwner" Loaded="Window_Loaded">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Таблицы -->
+        <TabControl Grid.Row="0">
+            <TabItem Header="Меню">
+                <DataGrid Name="menu" 
+                          AutoGenerateColumns="False"
+                          HeadersVisibility="Column"
+                          CanUserAddRows="False">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            <Setter Property="Padding" Value="5"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Binding="{Binding id_menu_item}" Header="ID" Width="Auto"/>
+                        <DataGridTextColumn Binding="{Binding item_name}" Header="Название" Width="*"/>
+                        <DataGridTextColumn Binding="{Binding id_category_fk}" Header="Категория" Width="Auto"/>
+                        <DataGridTextColumn Binding="{Binding cost_item}" Header="Цена" Width="Auto"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <TabItem Header="Должности">
+                <DataGrid Name="post" 
+                          AutoGenerateColumns="False"
+                          HeadersVisibility="Column"
+                          CanUserAddRows="False">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            <Setter Property="Padding" Value="5"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Binding="{Binding id_post}" Header="ID" Width="Auto"/>
+                        <DataGridTextColumn Binding="{Binding title_post}" Header="Должность" Width="*"/>
+                        <DataGridTextColumn Binding="{Binding accessLevel}" Header="Уровень доступа" Width="Auto"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <TabItem Header="Клиенты">
+                <DataGrid Name="clients" 
+                          AutoGenerateColumns="False"
+                          HeadersVisibility="Column"
+                          CanUserAddRows="False">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            <Setter Property="Padding" Value="5"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Binding="{Binding id_client}" Header="ID" Width="Auto"/>
+                        <DataGridTextColumn Binding="{Binding name_client}" Header="Имя клиента" Width="*"/>
+                        <DataGridTextColumn Binding="{Binding ph_numb_client}" Header="Телефон" Width="Auto"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+        </TabControl>
+
+        <!-- Кнопка назад -->
+        <Button Grid.Row="1" Content="Назад" 
+                HorizontalAlignment="Left" 
+                Click="Button_Click"
+                Width="100" Height="30"
+                Margin="5"
+                BorderBrush="#FF3F51B5" BorderThickness="1"/>
+    </Grid>
+</Window>

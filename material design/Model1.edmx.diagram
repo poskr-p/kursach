@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="55cae3897e2348be841a5f2acc63a10f" Name="Diagram1" ZoomLevel="97">
+        <EntityTypeShape EntityType="cafe_barModel.Autorization" Width="1.5" PointX="8.875" PointY="0.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="cafe_barModel.CategoriesMenu" Width="1.5" PointX="3.875" PointY="1.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="cafe_barModel.Clients" Width="1.5" PointX="0.5" PointY="4.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="cafe_barModel.Employees" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="cafe_barModel.Menu" Width="1.5" PointX="6" PointY="1" IsExpanded="true" />
+        <EntityTypeShape EntityType="cafe_barModel.Order_details" Width="1.5" PointX="8.875" PointY="2.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="cafe_barModel.Orders" Width="1.5" PointX="4.75" PointY="4.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="cafe_barModel.Post" Width="1.5" PointX="2.75" PointY="3.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="cafe_barModel.Reservation" Width="1.5" PointX="7.125" PointY="4.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="cafe_barModel.Regular_Clients" Width="1.5" PointX="3" PointY="11.5" IsExpanded="true" />
+        <AssociationConnector Association="cafe_barModel.FK__Menu__id_categor__4BAC3F29" ManuallyRouted="false" />
+        <AssociationConnector Association="cafe_barModel.FK__Orders__id_cli_f__4E88ABD4" ManuallyRouted="false" />
+        <AssociationConnector Association="cafe_barModel.FK__Regular_C__id_re__4316F928" ManuallyRouted="false" />
+        <AssociationConnector Association="cafe_barModel.FK__Reservati__id_cl__45F365D3" ManuallyRouted="false" />
+        <AssociationConnector Association="cafe_barModel.FK__Employees__email__3D5E1FD2" ManuallyRouted="false" />
+        <AssociationConnector Association="cafe_barModel.FK__Orders__id_emp_f__4F7CD00D" ManuallyRouted="false" />
+        <AssociationConnector Association="cafe_barModel.FK__Reservati__id_em__46E78A0C" ManuallyRouted="false" />
+        <AssociationConnector Association="cafe_barModel.FK__Order_det__id_me__5441852A" ManuallyRouted="false" />
+        <AssociationConnector Association="cafe_barModel.FK__Order_det__id_or__534D60F1" ManuallyRouted="false" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>
