@@ -1,0 +1,31 @@
+﻿<Window x:Class="material_design.EditRegularClientWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Редактирование постоянного клиента" Height="300" Width="400">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Клиент:" Margin="0,0,0,5"/>
+        <ComboBox Grid.Row="1" Name="cmbClient" DisplayMemberPath="name_client" 
+                  SelectedValuePath="id_client" Margin="0,0,0,10"/>
+
+        <TextBlock Grid.Row="2" Text="Размер скидки (%):" Margin="0,0,0,5"/>
+        <TextBox Grid.Row="3" Name="txtDiscount" Margin="0,0,0,10"/>
+
+        <TextBlock Grid.Row="4" Text="Общая сумма покупок:" Margin="0,0,0,5"/>
+        <TextBox Grid.Row="5" Name="txtTotalSpent" Margin="0,0,0,20"/>
+
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Сохранить" Click="Save_Click" Width="80" Margin="0,0,10,0"/>
+            <Button Content="Отмена" Click="Cancel_Click" Width="80"/>
+        </StackPanel>
+    </Grid>
+</Window>

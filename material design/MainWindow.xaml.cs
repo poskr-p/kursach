@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace material_design
 {
@@ -24,72 +25,155 @@ namespace material_design
 
         private void LoadData()
         {
-            var query = from emp in db.Employees
-                        join post in db.Post on emp.post_emp_fk equals post.id_post
-                        select new
-                        {
-                            id_employee = emp.id_employee,
-                            name_employee = emp.name_employee,
-                            ph_number_emp = emp.ph_number_emp,
-                            post_emp_fk = emp.post_emp_fk,
-                            email = emp.email,
-                            title_post = post.title_post,
-                        };
+            try
+            {
+                var query = from emp in db.Employees
+                            join post in db.Post on emp.post_emp_fk equals post.id_post
+                            select new
+                            {
+                                id_employee = emp.id_employee,
+                                name_employee = emp.name_employee,
+                                ph_number_emp = emp.ph_number_emp,
+                                post_emp_fk = emp.post_emp_fk,
+                                email = emp.email,
+                                title_post = post.title_post,
+                                photo_data = emp.photo_data
+                            };
 
-            dgProduct.ItemsSource = query.ToList();
+                dgProduct.ItemsSource = query.ToList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}");
+            }
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+
+
+        private void OpenEditEmployeeWindow(Employees employee = null)
+        {
+            var editWindow = new EditEmployeeWindow(employee);
+            if (editWindow.ShowDialog() == true)
+            {
+                LoadData(); // Перезагружаем данные после сохранения
+            }
+        }
+
+
+
+        //private void Button_Click(object sender, RoutedEventArgs e)
+        //{
+        //    OpenEditEmployeeWindow();
+        //}
+
+        private void Button_Click(object sender, RoutedEventArgs e) // Добавление
         {
             try
             {
+                //Получаем данные изображения, если оно было загружено
+                byte[] photoData = null;
+                if (imgEmployee.Source != null && imgEmployee.Source is BitmapImage bitmapImage)
+                {
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        BitmapEncoder encoder = new PngBitmapEncoder();
+                        encoder.Frames.Add(BitmapFrame.Create(bitmapImage));
+                        encoder.Save(ms);
+                        photoData = ms.ToArray();
+                    }
+                }
+
                 db.Employees.Add(new Employees
                 {
                     id_employee = Convert.ToInt32(tbId.Text),
                     name_employee = tbName.Text,
                     ph_number_emp = tbNumber.Text,
                     post_emp_fk = Convert.ToInt32(tbpost.Text),
-                    email = tbEmail.Text
+                    email = tbEmail.Text,
+                    photo_data = photoData
                 });
+
                 db.SaveChanges();
                 LoadData();
                 ClearFields();
-                MessageBox.Show("Данные успешно добавлены", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Данные успешно добавлены", "Успех",
+                              MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка добавления: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка добавления: {ex.Message}", "Ошибка",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             try
             {
-                var employee = db.Employees.Find(Convert.ToInt32(tbId.Text));
+                if (dgProduct.SelectedItem == null)
+                {
+                    MessageBox.Show("Выберите сотрудника для удаления");
+                    return;
+                }
+
+                dynamic selectedItem = dgProduct.SelectedItem;
+                int id = selectedItem.id_employee;
+                var employee = db.Employees.Find(id);
+
                 if (employee != null)
                 {
-                    var result = MessageBox.Show("Вы уверены, что хотите удалить этого сотрудника?", "Подтверждение удаления",
-                                              MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    var result = MessageBox.Show("Вы уверены, что хотите удалить этого сотрудника?",
+                        "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
                     if (result == MessageBoxResult.Yes)
                     {
                         db.Employees.Remove(employee);
                         db.SaveChanges();
                         LoadData();
                         ClearFields();
-                        MessageBox.Show("Данные успешно удалены", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("Сотрудник успешно удален");
                     }
-                }
-                else
-                {
-                    MessageBox.Show("Сотрудник с указанным ID не найден", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка удаления: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка удаления: {ex.Message}");
             }
         }
+
+
+
+
+        //private void Button_Click_1(object sender, RoutedEventArgs e)
+        //{
+        //    try
+        //    {
+        //        var employee = db.Employees.Find(Convert.ToInt32(tbId.Text));
+        //        if (employee != null)
+        //        {
+        //            var result = MessageBox.Show("Вы уверены, что хотите удалить этого сотрудника?", "Подтверждение удаления",
+        //                                      MessageBoxButton.YesNo, MessageBoxImage.Question);
+        //            if (result == MessageBoxResult.Yes)
+        //            {
+        //                db.Employees.Remove(employee);
+        //                db.SaveChanges();
+        //                LoadData();
+        //                ClearFields();
+        //                MessageBox.Show("Данные успешно удалены", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            MessageBox.Show("Сотрудник с указанным ID не найден", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show($"Ошибка удаления: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+        //    }
+        //}
 
         private void ImportFromFile()
         {
@@ -197,29 +281,38 @@ namespace material_design
                               MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
+
 
         private void BackupDatabase()
         {
             try
             {
-                string backupFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "CafeBarBackups");
+                string backupFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "CafeBarBackups"
+                );
                 Directory.CreateDirectory(backupFolder);
 
-                string backupFile = Path.Combine(backupFolder, $"cafe_bar_backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak");
+                string backupFile = Path.Combine(
+                    backupFolder,
+                    $"cafe_bar_backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak"
+                );
 
-                string dbName = db.Database.Connection.Database;
-                string dbFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{dbName}.mdf");
+                // SQL-запрос для создания резервной копии
+                string backupQuery = $@"
+            BACKUP DATABASE [cafe_bar] 
+            TO DISK = '{backupFile}' 
+            WITH FORMAT, COMPRESSION;
+        ";
 
-                File.Copy(dbFile, backupFile, true);
+                // Выполнение команды
+                db.Database.ExecuteSqlCommand(TransactionalBehavior.DoNotEnsureTransaction, backupQuery);
 
-                MessageBox.Show($"Резервная копия успешно создана:\n{backupFile}", "Успех",
-                              MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Резервная копия создана:\n{backupFile}", "Успех");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при создании резервной копии: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка при создании резервной копии: {ex.Message}", "Ошибка");
             }
         }
 
@@ -229,32 +322,37 @@ namespace material_design
             {
                 OpenFileDialog openFileDialog = new OpenFileDialog
                 {
-                    Filter = "Backup files (*.bak)|*.bak|All files (*.*)|*.*",
-                    InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "CafeBarBackups")
+                    Filter = "Backup files (*.bak)|*.bak",
+                    InitialDirectory = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                        "CafeBarBackups"
+                    )
                 };
 
                 if (openFileDialog.ShowDialog() == true)
                 {
-                    string dbName = db.Database.Connection.Database;
-                    string dbFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{dbName}.mdf");
+                    string backupFile = openFileDialog.FileName;
 
-                    db.Dispose();
-                    File.Copy(openFileDialog.FileName, dbFile, true);
-                    db = new cafe_barEntities1();
-                    LoadData();
+                    // SQL-запрос для восстановления
+                    string restoreQuery = $@"
+                USE [master];
+                ALTER DATABASE [cafe_bar] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                RESTORE DATABASE [cafe_bar] 
+                FROM DISK = '{backupFile}' 
+                WITH REPLACE;
+                ALTER DATABASE [cafe_bar] SET MULTI_USER;
+            ";
 
-                    MessageBox.Show("База данных успешно восстановлена из резервной копии", "Успех",
-                                  MessageBoxButton.OK, MessageBoxImage.Information);
+                    db.Database.ExecuteSqlCommand(TransactionalBehavior.DoNotEnsureTransaction, restoreQuery);
+                    MessageBox.Show("База данных успешно восстановлена!", "Успех");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при восстановлении из резервной копии: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
-                db = new cafe_barEntities1();
+                MessageBox.Show($"Ошибка при восстановлении: {ex.Message}", "Ошибка");
             }
         }
-        
+
 
         private void ClearFields()
         {
@@ -263,32 +361,32 @@ namespace material_design
             tbNumber.Text = "";
             tbpost.Text = "";
             tbEmail.Text = "";
+            imgEmployee.Source = null;
         }
 
         private void dgProduct_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (dgProduct.SelectedItem != null)
             {
-                dynamic selectedItem = dgProduct.SelectedItem;
-                tbId.Text = selectedItem.id_employee.ToString();
-                tbName.Text = selectedItem.name_employee;
-                tbNumber.Text = selectedItem.ph_number_emp;
-                tbpost.Text = selectedItem.post_emp_fk.ToString();
-                tbEmail.Text = selectedItem.email;
+                try
+                {
+                    dynamic selectedItem = dgProduct.SelectedItem;
+                    int id = selectedItem.id_employee;
+                    var employee = db.Employees.Find(id);
+
+                    if (employee != null)
+                    {
+                        OpenEditEmployeeWindow(employee);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка: {ex.Message}");
+                }
             }
         }
 
-        private void Button_Click_3(object sender, RoutedEventArgs e)
-        {
-            Window2 window2 = new Window2();
-            window2.ShowDialog();
-        }
-
-        private void Button_Click_4(object sender, RoutedEventArgs e)
-        {
-            filtering filterWindow = new filtering();
-            filterWindow.ShowDialog();
-        }
+      
 
         private void BackupButton_Click(object sender, RoutedEventArgs e)
         {
@@ -315,6 +413,76 @@ namespace material_design
         {
             ExportToCsv();
         }
+
+
+
+
+
+
+
+
+
+
         
+
+        private void SelectPhoto_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "Image files (*.jpg, *.jpeg, *.png)|*.jpg;*.jpeg;*.png",
+                Title = "Выберите фото сотрудника"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    // Чтение файла в массив байтов
+                    byte[] imageData = File.ReadAllBytes(openFileDialog.FileName);
+
+                    // Отображение изображения в интерфейсе
+                    DisplayImage(imageData);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка загрузки изображения: {ex.Message}", "Ошибка",
+                                  MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void RemovePhoto_Click(object sender, RoutedEventArgs e)
+        {
+            imgEmployee.Source = null;
+        }
+
+        private void DisplayImage(byte[] imageData)
+        {
+            if (imageData == null || imageData.Length == 0) return;
+
+            try
+            {
+                using (MemoryStream ms = new MemoryStream(imageData))
+                {
+                    BitmapImage image = new BitmapImage();
+                    image.BeginInit();
+                    image.CacheOption = BitmapCacheOption.OnLoad;
+                    image.StreamSource = ms;
+                    image.EndInit();
+                    imgEmployee.Source = image;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка отображения изображения: {ex.Message}", "Ошибка",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private void MainMenuButton_Click(object sender, RoutedEventArgs e)
+        {
+            var mainDashboard = new MainDashboard();
+            mainDashboard.Show();
+            this.Close();
+        }
     }
 }

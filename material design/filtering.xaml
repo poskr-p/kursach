@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Фильтрация" Height="450" Width="800"
         WindowStartupLocation="CenterScreen">
+
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -11,58 +12,55 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Фильтры -->
+        <!-- Выбор типа данных -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-            <ComboBox Name="cbP" 
-                     Width="200" 
+            <ComboBox Name="cbDataType" Width="150" Margin="0,0,20,0"
+                     SelectionChanged="cbDataType_SelectionChanged">
+                <ComboBoxItem Content="Сотрудники"/>
+                <ComboBoxItem Content="Клиенты"/>
+            </ComboBox>
+        </StackPanel>
+
+        <!-- Фильтры -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
+            <ComboBox Name="cbFilter" 
+                     Width="200"
                      Margin="0,0,20,0"
-                     SelectionChanged="cbP_SelectionChanged">
-                
+                     SelectionChanged="cbFilter_SelectionChanged">
             </ComboBox>
 
-            <TextBox Name="tbN" 
+            <TextBox Name="tbSearch"
                     Width="200"
                     Text="Поиск по имени"
                     Foreground="Gray"
                     GotFocus="SearchBox_GotFocus"
                     LostFocus="SearchBox_LostFocus"
-                    TextChanged="tbN_TextChanged"/>
+                    TextChanged="tbSearch_TextChanged"/>
         </StackPanel>
 
         <!-- Таблица -->
-        <DataGrid Grid.Row="1" Name="dgP" 
-                 AutoGenerateColumns="False" 
+        <DataGrid Grid.Row="2" Name="dgData"
+                 AutoGenerateColumns="False"
                  Height="250"
                  HeadersVisibility="Column"
                  CanUserAddRows="False">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding id_employee}" Width="Auto"/>
-                <DataGridTextColumn Header="Имя" Binding="{Binding name_employee}" Width="*"/>
-                <DataGridTextColumn Header="Телефон" Binding="{Binding ph_number_emp}" Width="Auto"/>
-                <DataGridTextColumn Header="Должность" Binding="{Binding title_post}" Width="Auto"/>
-            
-            </DataGrid.Columns>
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
                     <Setter Property="FontWeight" Value="Bold"/>
                     <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 </Style>
             </DataGrid.ColumnHeaderStyle>
-            <!-- Колонки будут добавлены в коде -->
         </DataGrid>
 
         <!-- Кнопки -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Отчет" 
-                    Click="Button_Click" 
+            <Button Content="Отчет"
+                    Click="Button_Click"
                     Margin="0,0,10,0"
                     Width="100" Height="30"
                     Background="#FF3F51B5" Foreground="White"/>
-
-            <Button Content="Назад"
-                    Click="Button_Click_1"
-                    Width="100" Height="30"
-                    BorderBrush="#FF3F51B5" BorderThickness="1"/>
+            
         </StackPanel>
+        <Button Content="Главное меню" Click="MainMenuButton_Click" Margin="5" Width="100"/>
     </Grid>
 </Window>

@@ -37,7 +37,7 @@ namespace material_design
 
                 if (user != null && PasswordHelper.VerifyPassword(tBP.Password, user.PasswordHash, user.Salt))
                 {
-                    new MainWindow().Show();
+                    new MainDashboard().Show();
                     this.Close();
                 }
                 else

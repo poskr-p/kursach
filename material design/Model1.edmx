@@ -38,6 +38,7 @@
           <Property Name="ph_number_emp" Type="varchar" MaxLength="11" Nullable="false" />
           <Property Name="post_emp_fk" Type="int" Nullable="false" />
           <Property Name="email" Type="varchar" MaxLength="100" Nullable="false" />
+          <Property Name="photo_data" Type="varbinary(max)" />
         </EntityType>
         <EntityType Name="Menu">
           <Key>
@@ -303,6 +304,7 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
           <NavigationProperty Name="Post" Relationship="Self.FK__Employees__email__3D5E1FD2" FromRole="Employees" ToRole="Post" />
           <NavigationProperty Name="Orders" Relationship="Self.FK__Orders__id_emp_f__4F7CD00D" FromRole="Employees" ToRole="Orders" />
           <NavigationProperty Name="Reservation" Relationship="Self.FK__Reservati__id_em__46E78A0C" FromRole="Employees" ToRole="Reservation" />
+          <Property Name="photo_data" Type="Binary" MaxLength="Max" FixedLength="false" />
         </EntityType>
         <EntityType Name="Menu">
           <Key>
@@ -563,6 +565,7 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
           <EntitySetMapping Name="Employees">
             <EntityTypeMapping TypeName="cafe_barModel.Employees">
               <MappingFragment StoreEntitySet="Employees">
+                <ScalarProperty Name="photo_data" ColumnName="photo_data" />
                 <ScalarProperty Name="id_employee" ColumnName="id_employee" />
                 <ScalarProperty Name="name_employee" ColumnName="name_employee" />
                 <ScalarProperty Name="ph_number_emp" ColumnName="ph_number_emp" />

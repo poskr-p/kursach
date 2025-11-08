@@ -3,9 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:material_design"
         mc:Ignorable="d"
         Title="Управление персоналом кафе-бара" 
         Height="700" Width="1200">
+    
+    <Window.Resources>
+        <local:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter"/>
+    </Window.Resources>
+    
+   
+
 
     <Grid>
         <Grid.RowDefinitions>
@@ -40,6 +48,14 @@
                     <DataGridTextColumn Binding="{Binding ph_number_emp}" Header="Телефон" Width="Auto"/>
                     <DataGridTextColumn Binding="{Binding title_post}" Header="Должность" Width="Auto"/>
                     <DataGridTextColumn Binding="{Binding email}" Header="Email" Width="*"/>
+                    <DataGridTemplateColumn Header="Фото" Width="Auto">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding photo_data, Converter={StaticResource ByteArrayToImageConverter}}" 
+                       Width="40" Height="40" Stretch="Uniform"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
 
@@ -64,6 +80,14 @@
 
                     <!-- Email Field -->
                     <TextBox Name="tbEmail" ToolTip="Email" Margin="0,16,0,0"/>
+                    <!-- Photo Field -->
+                    <StackPanel Margin="0,16,0,0">
+                        <Image x:Name="imgEmployee" Width="100" Height="100" Stretch="Uniform"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="Выбрать фото" Click="SelectPhoto_Click" Margin="0,5,5,0"/>
+                            <Button Content="Удалить фото" Click="RemovePhoto_Click" Margin="5,5,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
 
                     <!-- CRUD Buttons -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
@@ -72,16 +96,16 @@
                     </StackPanel>
 
                     <!-- Import/Export Buttons -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                    <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
                         <Button Content="Импорт" Click="ImportButton_Click" Background="#FF4CAF50" Foreground="White" Padding="8"/>
                         <Button Content="Экспорт CSV" Click="ExportCsvButton_Click"  Background="DarkOrange" Foreground="White" Margin="8,0,0,0" Padding="8"/>
                     </StackPanel>
 
-                    <!-- Backup Buttons -->
+                    --><!-- Backup Buttons --><!--
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
                         <Button Content="Резервная копия" Click="BackupButton_Click" Padding="8"/>
                         <Button Content="Восстановить" Click="RestoreButton_Click" Margin="8,0,0,0" Padding="8"/>
-                    </StackPanel>
+                    </StackPanel>-->
                 </StackPanel>
             </Border>
         </Grid>
@@ -89,8 +113,8 @@
         <!-- Footer -->
         <Border Grid.Row="2" Padding="8" Background="#FFEEEEEE">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Другие таблицы" Click="Button_Click_3" Padding="8"/>
-                <Button Content="Фильтрация" Click="Button_Click_4" Margin="8,0,0,0" Padding="8"/>
+                <Button Content="Главное меню" Click="MainMenuButton_Click" Padding="8"/>
+
             </StackPanel>
         </Border>
     </Grid>
