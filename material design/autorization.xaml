@@ -45,10 +45,6 @@
                     Background="LightGray"/>
         </StackPanel>
 
-        <Button Grid.Row="4" Content="Регистрация" 
-                Click="RegisterButton_Click" 
-                HorizontalAlignment="Center"
-                Width="150" Height="30"
-                Background="Transparent" BorderBrush="#FF3F51B5"/>
+        
     </Grid>
 </Window>

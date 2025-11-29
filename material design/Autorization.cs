@@ -18,5 +18,6 @@ namespace material_design
         public string Login { get; set; }
         public string PasswordHash { get; set; }
         public string Salt { get; set; }
+        public byte accessLevel { get; set; }
     }
 }

@@ -27,7 +27,6 @@ namespace material_design
         "CategoriesMenu", "Menu", "Orders", "Order_details", "Autorization"
     };
 
-            // Создаем список с русскими названиями для отображения
             var displayNames = tableNames.Select(t => new
             {
                 EnglishName = t,

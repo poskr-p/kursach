@@ -95,7 +95,7 @@ namespace material_design
 
         public static string TranslateQueryResult(string englishText)
         {
-            // Для переводов результатов запросов, если нужно
+            // Для переводов результатов запросов
             var translations = new Dictionary<string, string>
             {
                 {"Regular", "Постоянный"},

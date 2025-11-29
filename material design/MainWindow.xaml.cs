@@ -415,16 +415,6 @@ namespace material_design
         }
 
 
-
-
-
-
-
-
-
-
-        
-
         private void SelectPhoto_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
