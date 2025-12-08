@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,6 +13,7 @@ namespace material_design
         private cafe_barEntities1 db;
         private int currentUserAccessLevel;
         private List<OrderItem> currentOrderItems;
+        private int currentEmployeeId;
 
         public class OrderItem
         {
@@ -22,23 +24,34 @@ namespace material_design
             public decimal Subtotal => Quantity * UnitPrice;
         }
 
-        public OrderTakingWindow(int accessLevel)
+        public OrderTakingWindow(int accessLevel, int employeeId = 0)
         {
             InitializeComponent();
             db = new cafe_barEntities1();
             currentUserAccessLevel = accessLevel;
+            currentEmployeeId = employeeId;
             currentOrderItems = new List<OrderItem>();
 
             InitializeData();
+            LoadMenuItems();
         }
 
         private void InitializeData()
         {
             // Загрузка категорий
             var categories = db.CategoriesMenu.ToList();
-            cbCategories.ItemsSource = categories;
-            cbCategories.DisplayMemberPath = "title_category";
-            cbCategories.SelectedValuePath = "id_category";
+            cbCategories.Items.Clear();
+            cbCategories.Items.Add(new ComboBoxItem { Content = "Все категории", Tag = 0 });
+
+            foreach (var category in categories)
+            {
+                cbCategories.Items.Add(new ComboBoxItem
+                {
+                    Content = category.title_category,
+                    Tag = category.id_category
+                });
+            }
+            cbCategories.SelectedIndex = 0;
 
             // Загрузка клиентов
             var clients = db.Clients.ToList();
@@ -46,41 +59,32 @@ namespace material_design
             cbClients.DisplayMemberPath = "name_client";
             cbClients.SelectedValuePath = "id_client";
 
-            // Загрузка меню
-            LoadMenuItems();
-
-            // Обновление итогов
-            UpdateOrderTotal();
+            // Информация о текущем пользователе
+            if (currentEmployeeId > 0)
+            {
+                var employee = db.Employees.Find(currentEmployeeId);
+                if (employee != null)
+                {
+                    tbCurrentUser.Text = $"Официант: {employee.name_employee}";
+                }
+            }
         }
 
         private void LoadMenuItems()
         {
-            var menuItems = db.Menu
-                .Include("CategoriesMenu")
-                .ToList();
-            dgMenu.ItemsSource = menuItems;
-        }
+            var query = db.Menu.Include(m => m.CategoriesMenu).AsQueryable();
 
-        private void cbCategories_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            FilterMenuItems();
-        }
-
-        private void FilterMenuItems()
-        {
-            var allItems = db.Menu.Include("CategoriesMenu").AsQueryable();
-
-            if (cbCategories.SelectedValue != null && (int)cbCategories.SelectedValue > 0)
+            if (cbCategories.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is int categoryId && categoryId > 0)
             {
-                allItems = allItems.Where(m => m.id_category_fk == (int)cbCategories.SelectedValue);
+                query = query.Where(m => m.id_category_fk == categoryId);
             }
 
-            if (!string.IsNullOrWhiteSpace(tbSearch.Text) && tbSearch.Text != "Поиск...")
+            if (!string.IsNullOrEmpty(tbSearch.Text) && tbSearch.Text != "Поиск...")
             {
-                allItems = allItems.Where(m => m.item_name.Contains(tbSearch.Text));
+                query = query.Where(m => m.item_name.Contains(tbSearch.Text));
             }
 
-            dgMenu.ItemsSource = allItems.ToList();
+            dgMenu.ItemsSource = query.OrderBy(m => m.item_name).ToList();
         }
 
         private void AddToOrder_Click(object sender, RoutedEventArgs e)
@@ -153,13 +157,19 @@ namespace material_design
                 return;
             }
 
+            if (currentEmployeeId == 0)
+            {
+                MessageBox.Show("Ошибка: сотрудник не определен!");
+                return;
+            }
+
             try
             {
                 // Создание заказа
                 var order = new Orders
                 {
                     id_cli_fk = (int)cbClients.SelectedValue,
-                    id_emp_fk = GetCurrentEmployeeId(), // Нужно реализовать получение ID текущего сотрудника
+                    id_emp_fk = currentEmployeeId,
                     order_date = DateTime.Now,
                     totalAmount = currentOrderItems.Sum(item => item.Subtotal)
                 };
@@ -193,14 +203,14 @@ namespace material_design
             }
         }
 
-        private int GetCurrentEmployeeId()
+        private void NewOrder_Click(object sender, RoutedEventArgs e)
         {
-            // В реальном приложении здесь должна быть логика получения ID текущего сотрудника
-            // Пока возвращаем первого сотрудника с доступом официанта/бармена
-            return db.Employees
-                .Where(e => e.Post.accessLevel == currentUserAccessLevel)
-                .Select(e => e.id_employee)
-                .FirstOrDefault();
+            ClearOrder_Click(sender, e);
+        }
+
+        private void ActiveOrders_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Просмотр активных заказов - функция в разработке");
         }
 
         private void SearchBox_GotFocus(object sender, RoutedEventArgs e)
@@ -225,18 +235,18 @@ namespace material_design
 
         private void tbSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
-            FilterMenuItems();
+            LoadMenuItems();
+        }
+
+        private void cbCategories_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            LoadMenuItems();
         }
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
             new MainDashboard().Show();
             this.Close();
-        }
-
-        private void dgMenu_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ///
         }
     }
 }

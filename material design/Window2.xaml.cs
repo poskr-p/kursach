@@ -1,178 +1,79 @@
 ﻿using System;
-using System.Data.Entity;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
+using System.Data.Entity;
+using System.Reflection;
+using System.ComponentModel.DataAnnotations;
 
 namespace material_design
 {
     public partial class Window2 : Window
     {
-        private cafe_barEntities1 db;
-        private string currentTableName;
+        private cafe_barEntities1 _db = new cafe_barEntities1();
+        private string _currentTable;
+        private object _currentEntity;
+        private Dictionary<string, Type> _tableTypes = new Dictionary<string, Type>();
+        private Dictionary<string, StackPanel> _fieldPanels = new Dictionary<string, StackPanel>();
 
         public Window2()
         {
             InitializeComponent();
-            db = new cafe_barEntities1();
-            LoadTableNames();
+            InitializeTableTypes();
         }
 
-        private void LoadTableNames()
+        private void InitializeTableTypes()
         {
-            var tableNames = new[]
-            {
-        "Post", "Employees", "Clients", "Regular_Clients", "Reservation",
-        "CategoriesMenu", "Menu", "Orders", "Order_details", "Autorization"
-    };
-
-            var displayNames = tableNames.Select(t => new
-            {
-                EnglishName = t,
-                RussianName = RussianTranslator.GetTableName(t)
-            }).ToList();
-
-            cbTables.ItemsSource = displayNames;
-            cbTables.DisplayMemberPath = "RussianName";
-            cbTables.SelectedValuePath = "EnglishName";
+            // Исключаем таблицу авторизации
+            _tableTypes.Add("Должности", typeof(Post));
+            _tableTypes.Add("Сотрудники", typeof(Employees));
+            _tableTypes.Add("Клиенты", typeof(Clients));
+            _tableTypes.Add("Постоянные клиенты", typeof(Regular_Clients));
+            _tableTypes.Add("Бронирования", typeof(Reservation));
+            _tableTypes.Add("Категории меню", typeof(CategoriesMenu));
+            _tableTypes.Add("Меню", typeof(Menu));
+            _tableTypes.Add("Заказы", typeof(Orders));
+            _tableTypes.Add("Детали заказов", typeof(Order_details));
         }
 
-        private void cbTables_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (cbTables.SelectedItem == null) return;
+            LoadTables();
+        }
 
-            dynamic selectedItem = cbTables.SelectedItem;
-            currentTableName = selectedItem.EnglishName;
+        private void LoadTables()
+        {
+            lvTables.Items.Clear();
+            foreach (var table in _tableTypes.Keys)
+            {
+                lvTables.Items.Add(table);
+            }
+        }
+
+        private void lvTables_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (lvTables.SelectedItem == null) return;
+
+            _currentTable = lvTables.SelectedItem.ToString();
+            tbTableTitle.Text = _currentTable;
+            spEditPanel.Visibility = Visibility.Visible;
+            tbEditTitle.Text = $"Редактирование: {_currentTable}";
+
             LoadTableData();
+            CreateEditFields();
         }
-
-        //private void cbTables_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        //{
-        //    if (cbTables.SelectedItem == null) return;
-
-        //    currentTableName = cbTables.SelectedItem.ToString();
-        //    LoadTableData();
-        //}
 
         private void LoadTableData()
         {
             try
             {
-                switch (currentTableName)
-                {
-                    case "Post":
-                        dataGrid.ItemsSource = db.Post.ToList();
-                        ConfigureDataGridColumns(db.Post.FirstOrDefault());
-                        break;
+                Type entityType = _tableTypes[_currentTable];
+                var dbSet = _db.Set(entityType);
+                var query = ((IQueryable)dbSet).IncludeAll();
 
-                    case "Employees":
-                        var employees = from emp in db.Employees
-                                        join post in db.Post on emp.post_emp_fk equals post.id_post
-                                        select new
-                                        {
-                                            emp.id_employee,
-                                            emp.name_employee,
-                                            emp.ph_number_emp,
-                                            emp.email,
-                                            post.title_post
-                                        };
-                        dataGrid.ItemsSource = employees.ToList();
-                        ConfigureDataGridColumns(employees.FirstOrDefault());
-                        break;
-
-                    case "Clients":
-                        dataGrid.ItemsSource = db.Clients.ToList();
-                        ConfigureDataGridColumns(db.Clients.FirstOrDefault());
-                        break;
-
-                    case "Regular_Clients":
-                        var regularClients = from rc in db.Regular_Clients
-                                             join c in db.Clients on rc.id_reg_client_fk equals c.id_client
-                                             select new
-                                             {
-                                                 rc.id_reg_client_fk,
-                                                 ClientName = c.name_client,
-                                                 rc.discount_rate,
-                                                 rc.total_spent
-                                             };
-                        dataGrid.ItemsSource = regularClients.ToList();
-                        ConfigureDataGridColumns(regularClients.FirstOrDefault());
-                        break;
-
-                    case "Reservation":
-                        var reservations = from r in db.Reservation
-                                           join c in db.Clients on r.id_client_fk equals c.id_client
-                                           join e in db.Employees on r.id_employee_fk equals e.id_employee
-                                           select new
-                                           {
-                                               r.id_reservation,
-                                               Client = c.name_client,
-                                               Employee = e.name_employee,
-                                               r.reservation_date,
-                                               r.guests_count
-                                           };
-                        dataGrid.ItemsSource = reservations.ToList();
-                        ConfigureDataGridColumns(reservations.FirstOrDefault());
-                        break;
-
-                    case "CategoriesMenu":
-                        dataGrid.ItemsSource = db.CategoriesMenu.ToList();
-                        ConfigureDataGridColumns(db.CategoriesMenu.FirstOrDefault());
-                        break;
-
-                    case "Menu":
-                        var menu = from m in db.Menu
-                                   join c in db.CategoriesMenu on m.id_category_fk equals c.id_category
-                                   select new
-                                   {
-                                       m.id_menu_item,
-                                       m.item_name,
-                                       Category = c.title_category,
-                                       m.cost_item
-                                   };
-                        dataGrid.ItemsSource = menu.ToList();
-                        ConfigureDataGridColumns(menu.FirstOrDefault());
-                        break;
-
-                    case "Orders":
-                        var orders = from o in db.Orders
-                                     join c in db.Clients on o.id_cli_fk equals c.id_client
-                                     join e in db.Employees on o.id_emp_fk equals e.id_employee
-                                     select new
-                                     {
-                                         o.id_order,
-                                         Client = c.name_client,
-                                         Employee = e.name_employee,
-                                         o.order_date,
-                                         o.totalAmount
-                                     };
-                        dataGrid.ItemsSource = orders.ToList();
-                        ConfigureDataGridColumns(orders.FirstOrDefault());
-                        break;
-
-                    case "Order_details":
-                        var orderDetails = from od in db.Order_details
-                                           join o in db.Orders on od.id_order_fk equals o.id_order
-                                           join m in db.Menu on od.id_menu_item_fk equals m.id_menu_item
-                                           select new
-                                           {
-                                               od.id_order_details,
-                                               OrderId = o.id_order,
-                                               MenuItem = m.item_name,
-                                               od.quantity,
-                                               od.unit_price,
-                                               od.subtotal
-                                           };
-                        dataGrid.ItemsSource = orderDetails.ToList();
-                        ConfigureDataGridColumns(orderDetails.FirstOrDefault());
-                        break;
-
-                    case "Autorization":
-                        dataGrid.ItemsSource = db.Autorization.ToList();
-                        ConfigureDataGridColumns(db.Autorization.FirstOrDefault());
-                        break;
-                }
+                dataGrid.ItemsSource = query.ToList(entityType);
+                tbStatus.Text = $"Загружено записей: {((System.Collections.IList)dataGrid.ItemsSource).Count}";
             }
             catch (Exception ex)
             {
@@ -180,268 +81,292 @@ namespace material_design
             }
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void CreateEditFields()
         {
-            LoadTableNames();
-            cbTables.SelectedIndex = 0; // Выбираем первую таблицу по умолчанию
-        }
+            spFields.Children.Clear();
+            _fieldPanels.Clear();
 
-        private void ConfigureDataGridColumns(object sampleItem)
-        {
-            if (sampleItem == null) return;
+            Type entityType = _tableTypes[_currentTable];
+            var properties = entityType.GetProperties()
+                .Where(p => p.Name != "id" &&
+                           !p.Name.EndsWith("_fk") &&
+                           !p.Name.Contains("photo_data") &&
+                           p.CanWrite);
 
-            dataGrid.AutoGenerateColumns = false;
-            dataGrid.Columns.Clear();
-
-            var properties = sampleItem.GetType().GetProperties();
-
-            foreach (var property in properties)
+            foreach (var prop in properties)
             {
-                // Пропускаем ненужные или служебные свойства
-                if (property.Name.Contains("Entity") || property.Name.Contains("Reference"))
-                    continue;
+                var stackPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
 
-                var column = new DataGridTextColumn
+                string displayName = GetDisplayName(prop);
+                var textBlock = new TextBlock
                 {
-                    Header = RussianTranslator.GetFieldName(property.Name),
-                    Binding = new System.Windows.Data.Binding(property.Name)
+                    Text = displayName + ":",
+                    Margin = new Thickness(0, 0, 0, 5),
+                    FontWeight = FontWeights.Normal
                 };
-                dataGrid.Columns.Add(column);
-            }
-        }
 
-        // Обработчик кнопки "Добавить"
-        private void AddButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                switch (currentTableName)
+                Control inputControl;
+
+                if (prop.PropertyType == typeof(string))
                 {
-                    case "Post":
-                        var postWindow = new EditPostWindow();
-                        if (postWindow.ShowDialog() == true)
-                            LoadTableData();
-                        break;
-
-                    case "Employees":
-                        var empWindow = new EditEmployeeWindow();
-                        if (empWindow.ShowDialog() == true)
-                            LoadTableData();
-                        break;
-
-                    case "Clients":
-                        var clientWindow = new EditClientWindow();
-                        if (clientWindow.ShowDialog() == true)
-                            LoadTableData();
-                        break;
-
-                    case "CategoriesMenu":
-                        var categoryWindow = new EditCategoryWindow();
-                        if (categoryWindow.ShowDialog() == true)
-                            LoadTableData();
-                        break;
-
-                    case "Menu":
-                        var menuWindow = new EditMenuWindow();
-                        if (menuWindow.ShowDialog() == true)
-                            LoadTableData();
-                        break;
-
-                    case "Orders":
-                        var orderWindow = new EditOrderWindow();
-                        if (orderWindow.ShowDialog() == true)
-                            LoadTableData();
-                        break;
-
-                    case "Order_details":
-                        var orderDetailWindow = new EditOrderDetailWindow();
-                        if (orderDetailWindow.ShowDialog() == true)
-                            LoadTableData();
-                        break;
-
-                    case "Reservation":
-                        var reservationWindow = new EditReservationWindow();
-                        if (reservationWindow.ShowDialog() == true)
-                            LoadTableData();
-                        break;
-
-                    case "Regular_Clients":
-                        var regularClientWindow = new EditRegularClientWindow();
-                        if (regularClientWindow.ShowDialog() == true)
-                            LoadTableData();
-                        break;
-
+                    inputControl = new TextBox();
+                    ((TextBox)inputControl).TextChanged += (s, e) => UpdateCurrentEntity(prop, ((TextBox)s).Text);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}");
-            }
-        }
-
-        // Обработчик двойного клика по DataGrid для редактирования
-        private void dataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (dataGrid.SelectedItem == null) return;
-
-            try
-            {
-                switch (currentTableName)
+                else if (prop.PropertyType == typeof(int) || prop.PropertyType == typeof(decimal))
                 {
-                    case "Post":
-                        dynamic postItem = dataGrid.SelectedItem;
-                        var post = db.Post.Find(postItem.id_post);
-                        if (post != null)
-                        {
-                            var window = new EditPostWindow(post);
-                            if (window.ShowDialog() == true)
-                                LoadTableData();
-                        }
-                        break;
-
-                    case "Employees":
-                        dynamic empItem = dataGrid.SelectedItem;
-                        var employee = db.Employees.Find(empItem.id_employee);
-                        if (employee != null)
-                        {
-                            var window = new EditEmployeeWindow(employee);
-                            if (window.ShowDialog() == true)
-                                LoadTableData();
-                        }
-                        break;
-
-                    case "Clients":
-                        dynamic clientItem = dataGrid.SelectedItem;
-                        var client = db.Clients.Find(clientItem.id_client);
-                        if (client != null)
-                        {
-                            var window = new EditClientWindow(client);
-                            if (window.ShowDialog() == true)
-                                LoadTableData();
-                        }
-                        break;
-
-                    case "CategoriesMenu":
-                        dynamic categoryItem = dataGrid.SelectedItem;
-                        var category = db.CategoriesMenu.Find(categoryItem.id_category);
-                        if (category != null)
-                        {
-                            var window = new EditCategoryWindow(category);
-                            if (window.ShowDialog() == true)
-                                LoadTableData();
-                        }
-                        break;
-
-                    case "Menu":
-                        dynamic menuItem = dataGrid.SelectedItem;
-                        var menu = db.Menu.Find(menuItem.id_menu_item);
-                        if (menu != null)
-                        {
-                            var window = new EditMenuWindow(menu);
-                            if (window.ShowDialog() == true)
-                                LoadTableData();
-                        }
-                        break;
-
-                    case "Orders":
-                        dynamic orderItem = dataGrid.SelectedItem;
-                        var order = db.Orders.Find(orderItem.id_order);
-                        if (order != null)
-                        {
-                            var window = new EditOrderWindow(order);
-                            if (window.ShowDialog() == true)
-                                LoadTableData();
-                        }
-                        break;
-
-                    case "Order_details":
-                        dynamic detailItem = dataGrid.SelectedItem;
-                        var orderDetail = db.Order_details.Find(detailItem.id_order_details);
-                        if (orderDetail != null)
-                        {
-                            var window = new EditOrderDetailWindow(orderDetail);
-                            if (window.ShowDialog() == true)
-                                LoadTableData();
-                        }
-                        break;
-
-                    case "Reservation":
-                        dynamic reservationItem = dataGrid.SelectedItem;
-                        var reservation = db.Reservation.Find(reservationItem.id_reservation);
-                        if (reservation != null)
-                        {
-                            var window = new EditReservationWindow(reservation);
-                            if (window.ShowDialog() == true)
-                                LoadTableData();
-                        }
-                        break;
-
-                    case "Regular_Clients":
-                        MessageBox.Show("Для редактирования постоянных клиентов используйте форму редактирования клиентов");
-                        break;
-
-                    
+                    inputControl = new TextBox();
+                    ((TextBox)inputControl).TextChanged += (s, e) => UpdateCurrentEntity(prop, ((TextBox)s).Text);
                 }
+                else if (prop.PropertyType == typeof(DateTime))
+                {
+                    inputControl = new DatePicker();
+                    ((DatePicker)inputControl).SelectedDateChanged += (s, e) =>
+                        UpdateCurrentEntity(prop, ((DatePicker)s).SelectedDate);
+                }
+                else if (prop.PropertyType == typeof(byte) || prop.PropertyType == typeof(short))
+                {
+                    inputControl = new TextBox();
+                    ((TextBox)inputControl).TextChanged += (s, e) => UpdateCurrentEntity(prop, ((TextBox)s).Text);
+                }
+                else
+                {
+                    inputControl = new TextBox();
+                    ((TextBox)inputControl).TextChanged += (s, e) => UpdateCurrentEntity(prop, ((TextBox)s).Text);
+                }
+
+                inputControl.Tag = prop.Name;
+                inputControl.Margin = new Thickness(0, 0, 0, 5);
+
+                stackPanel.Children.Add(textBlock);
+                stackPanel.Children.Add(inputControl);
+
+                spFields.Children.Add(stackPanel);
+                _fieldPanels[prop.Name] = stackPanel;
             }
-            catch (Exception ex)
+
+            // Добавляем поля для внешних ключей
+            AddForeignKeyFields(entityType);
+        }
+
+        private string GetDisplayName(PropertyInfo prop)
+        {
+            var displayAttr = prop.GetCustomAttribute<DisplayAttribute>();
+            return displayAttr?.Name ?? RussianTranslator.GetFieldName(prop.Name) ?? prop.Name;
+        }
+
+        private void AddForeignKeyFields(Type entityType)
+        {
+            // Для таблиц с внешними ключами добавляем ComboBox
+            if (_currentTable == "Сотрудники")
             {
-                MessageBox.Show($"Ошибка редактирования: {ex.Message}");
+                AddComboBoxField("post_emp_fk", "Должность", _db.Post.ToList(), "title_post", "id_post");
+            }
+            else if (_currentTable == "Постоянные клиенты")
+            {
+                AddComboBoxField("id_reg_client_fk", "Клиент", _db.Clients.ToList(), "name_client", "id_client");
+            }
+            else if (_currentTable == "Бронирования")
+            {
+                AddComboBoxField("id_client_fk", "Клиент", _db.Clients.ToList(), "name_client", "id_client");
+                AddComboBoxField("id_employee_fk", "Сотрудник", _db.Employees.ToList(), "name_employee", "id_employee");
+            }
+            else if (_currentTable == "Меню")
+            {
+                AddComboBoxField("id_category_fk", "Категория", _db.CategoriesMenu.ToList(), "title_category", "id_category");
+            }
+            else if (_currentTable == "Заказы")
+            {
+                AddComboBoxField("id_cli_fk", "Клиент", _db.Clients.ToList(), "name_client", "id_client");
+                AddComboBoxField("id_emp_fk", "Сотрудник", _db.Employees.ToList(), "name_employee", "id_employee");
+            }
+            else if (_currentTable == "Детали заказов")
+            {
+                AddComboBoxField("id_order_fk", "Заказ", _db.Orders.ToList(), "id_order", "id_order");
+                AddComboBoxField("id_menu_item_fk", "Позиция меню", _db.Menu.ToList(), "item_name", "id_menu_item");
             }
         }
 
-        // Обработчик кнопки "Удалить"
-        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        private void AddComboBoxField(string propertyName, string displayName,
+            System.Collections.IEnumerable items, string displayMember, string valueMember)
         {
-            if (dataGrid.SelectedItem == null) return;
-
-            try
+            var stackPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+            var textBlock = new TextBlock
             {
-                var result = MessageBox.Show("Вы уверены, что хотите удалить эту запись?",
-                    "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                Text = displayName + ":",
+                Margin = new Thickness(0, 0, 0, 5),
+                FontWeight = FontWeights.Normal
+            };
 
-                if (result == MessageBoxResult.Yes)
+            var comboBox = new ComboBox
+            {
+                DisplayMemberPath = displayMember,
+                SelectedValuePath = valueMember,
+                ItemsSource = items,
+                Margin = new Thickness(0, 0, 0, 5)
+            };
+
+            comboBox.SelectionChanged += (s, e) =>
+            {
+                if (comboBox.SelectedValue != null && _currentEntity != null)
                 {
-                    switch (currentTableName)
+                    var prop = _currentEntity.GetType().GetProperty(propertyName);
+                    if (prop != null)
                     {
-                        case "Post":
-                            dynamic postItem = dataGrid.SelectedItem;
-                            var post = db.Post.Find(postItem.id_post);
-                            if (post != null)
-                            {
-                                db.Post.Remove(post);
-                                db.SaveChanges();
-                            }
-                            break;
-
-                        case "Employees":
-                            dynamic empItem = dataGrid.SelectedItem;
-                            var employee = db.Employees.Find(empItem.id_employee);
-                            if (employee != null)
-                            {
-                                db.Employees.Remove(employee);
-                                db.SaveChanges();
-                            }
-                            break;
-
-                            // ... аналогично для других таблиц
+                        prop.SetValue(_currentEntity, comboBox.SelectedValue);
                     }
+                }
+            };
 
-                    LoadTableData();
-                    MessageBox.Show("Запись успешно удалена");
+            stackPanel.Children.Add(textBlock);
+            stackPanel.Children.Add(comboBox);
+
+            spFields.Children.Add(stackPanel);
+            _fieldPanels[propertyName] = stackPanel;
+        }
+
+        private void UpdateCurrentEntity(PropertyInfo prop, object value)
+        {
+            if (_currentEntity != null)
+            {
+                try
+                {
+                    if (value == null)
+                    {
+                        prop.SetValue(_currentEntity, null);
+                    }
+                    else if (prop.PropertyType == typeof(string))
+                    {
+                        prop.SetValue(_currentEntity, value.ToString());
+                    }
+                    else if (prop.PropertyType == typeof(int))
+                    {
+                        if (int.TryParse(value.ToString(), out int intValue))
+                            prop.SetValue(_currentEntity, intValue);
+                    }
+                    else if (prop.PropertyType == typeof(decimal))
+                    {
+                        if (decimal.TryParse(value.ToString(), out decimal decimalValue))
+                            prop.SetValue(_currentEntity, decimalValue);
+                    }
+                    else if (prop.PropertyType == typeof(DateTime))
+                    {
+                        prop.SetValue(_currentEntity, value);
+                    }
+                    else if (prop.PropertyType == typeof(byte))
+                    {
+                        if (byte.TryParse(value.ToString(), out byte byteValue))
+                            prop.SetValue(_currentEntity, byteValue);
+                    }
+                    else if (prop.PropertyType == typeof(short))
+                    {
+                        if (short.TryParse(value.ToString(), out short shortValue))
+                            prop.SetValue(_currentEntity, shortValue);
+                    }
+                }
+                catch { }
+            }
+        }
+
+        private void dataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _currentEntity = dataGrid.SelectedItem;
+            if (_currentEntity == null) return;
+
+            // Заполняем поля значениями из выбранной сущности
+            foreach (var kvp in _fieldPanels)
+            {
+                var propertyName = kvp.Key;
+                var stackPanel = kvp.Value;
+
+                var inputControl = stackPanel.Children[1] as Control;
+                if (inputControl == null) continue;
+
+                var prop = _currentEntity.GetType().GetProperty(propertyName);
+                if (prop == null) continue;
+
+                var value = prop.GetValue(_currentEntity);
+
+                if (inputControl is TextBox textBox)
+                {
+                    textBox.Text = value?.ToString() ?? "";
+                }
+                else if (inputControl is DatePicker datePicker && value is DateTime dateTime)
+                {
+                    datePicker.SelectedDate = dateTime;
+                }
+                else if (inputControl is ComboBox comboBox)
+                {
+                    comboBox.SelectedValue = value;
+                }
+            }
+        }
+
+        private void btnAdd_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Type entityType = _tableTypes[_currentTable];
+                _currentEntity = Activator.CreateInstance(entityType);
+
+                // Очищаем поля
+                foreach (var kvp in _fieldPanels)
+                {
+                    var stackPanel = kvp.Value;
+                    var inputControl = stackPanel.Children[1] as Control;
+
+                    if (inputControl is TextBox textBox)
+                    {
+                        textBox.Text = "";
+                    }
+                    else if (inputControl is DatePicker datePicker)
+                    {
+                        datePicker.SelectedDate = null;
+                    }
+                    else if (inputControl is ComboBox comboBox)
+                    {
+                        comboBox.SelectedItem = null;
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка удаления: {ex.Message}");
+                MessageBox.Show($"Ошибка создания новой записи: {ex.Message}");
             }
         }
 
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private void btnEdit_Click(object sender, RoutedEventArgs e)
         {
+            if (_currentEntity == null)
+            {
+                MessageBox.Show("Выберите запись для редактирования или создайте новую");
+                return;
+            }
+
             try
             {
-                db.SaveChanges();
-                MessageBox.Show("Изменения сохранены успешно!");
+                Type entityType = _tableTypes[_currentTable];
+                var dbSet = _db.Set(entityType);
+
+                // Проверяем, новая ли это запись
+                var idProperty = entityType.GetProperty(entityType.Name.ToLower().Replace("s", "") + "_id") ??
+                               entityType.GetProperty("id") ??
+                               entityType.GetProperties().FirstOrDefault(p => p.Name.EndsWith("_id"));
+
+                if (idProperty == null) return;
+
+                var idValue = idProperty.GetValue(_currentEntity);
+
+                if (idValue == null || Convert.ToInt32(idValue) == 0)
+                {
+                    // Новая запись
+                    dbSet.Add(_currentEntity);
+                }
+
+                _db.SaveChanges();
+                LoadTableData();
+
+                MessageBox.Show("Данные успешно сохранены", "Успех",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -449,17 +374,84 @@ namespace material_design
             }
         }
 
-        private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        private void btnDelete_Click(object sender, RoutedEventArgs e)
         {
-            LoadTableData();
+            if (_currentEntity == null || dataGrid.SelectedItem == null)
+            {
+                MessageBox.Show("Выберите запись для удаления");
+                return;
+            }
+
+            var result = MessageBox.Show("Вы уверены, что хотите удалить выбранную запись?",
+                "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.Yes) return;
+
+            try
+            {
+                Type entityType = _tableTypes[_currentTable];
+                var dbSet = _db.Set(entityType);
+                dbSet.Remove(_currentEntity);
+                _db.SaveChanges();
+
+                LoadTableData();
+                _currentEntity = null;
+
+                // Очищаем поля
+                foreach (var kvp in _fieldPanels)
+                {
+                    var stackPanel = kvp.Value;
+                    var inputControl = stackPanel.Children[1] as Control;
+
+                    if (inputControl is TextBox textBox)
+                    {
+                        textBox.Text = "";
+                    }
+                    else if (inputControl is DatePicker datePicker)
+                    {
+                        datePicker.SelectedDate = null;
+                    }
+                    else if (inputControl is ComboBox comboBox)
+                    {
+                        comboBox.SelectedItem = null;
+                    }
+                }
+
+                MessageBox.Show("Запись успешно удалена", "Успех",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка удаления: {ex.Message}");
+            }
         }
 
-        
-        private void MainMenuButton_Click(object sender, RoutedEventArgs e)
+        private void btnBack_Click(object sender, RoutedEventArgs e)
         {
             var mainDashboard = new MainDashboard();
             mainDashboard.Show();
             this.Close();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            _db.Dispose();
+        }
+    }
+
+    // Вспомогательные extension методы
+    public static class QueryableExtensions
+    {
+        public static IQueryable IncludeAll(this IQueryable query)
+        {
+            // Этот метод можно расширить для загрузки связанных данных
+            return query;
+        }
+
+        public static System.Collections.IList ToList(this IQueryable query, Type elementType)
+        {
+            var method = typeof(Enumerable).GetMethod("ToList").MakeGenericMethod(elementType);
+            return (System.Collections.IList)method.Invoke(null, new object[] { query });
         }
     }
 }

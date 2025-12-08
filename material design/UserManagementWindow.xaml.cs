@@ -152,7 +152,7 @@ namespace material_design
                 currentUser = user;
                 txtLogin.Text = user.Login;
                 cbAccessLevel.SelectedValue = user.accessLevel;
-                txtPassword.Password = ""; // Пароль не показываем
+                txtPassword.Password = ""; // не показываем
             }
         }
 

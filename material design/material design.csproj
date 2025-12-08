@@ -129,36 +129,13 @@
     <Compile Include="Clients.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
-    <Compile Include="EditCategoryWindow.xaml.cs">
-      <DependentUpon>EditCategoryWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="EditClientWindow.xaml.cs">
-      <DependentUpon>EditClientWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="EditEmployeeWindow.xaml.cs">
       <DependentUpon>EditEmployeeWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="EditMenuWindow.xaml.cs">
-      <DependentUpon>EditMenuWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="EditOrderDetailWindow.xaml.cs">
-      <DependentUpon>EditOrderDetailWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="EditOrderWindow.xaml.cs">
-      <DependentUpon>EditOrderWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="EditPostWindow.xaml.cs">
-      <DependentUpon>EditPostWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="EditRegularClientWindow.xaml.cs">
-      <DependentUpon>EditRegularClientWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="EditReservationWindow.xaml.cs">
-      <DependentUpon>EditReservationWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Employees.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
+    <Compile Include="ExceptionHelper.cs" />
     <Compile Include="filtering.xaml.cs">
       <DependentUpon>filtering.xaml</DependentUpon>
     </Compile>
@@ -229,39 +206,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="EditCategoryWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="EditClientWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="EditEmployeeWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="EditMenuWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="EditOrderDetailWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="EditOrderWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="EditPostWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="EditRegularClientWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="EditReservationWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

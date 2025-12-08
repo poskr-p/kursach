@@ -1,9 +1,126 @@
 ﻿<Window x:Class="material_design.ScheduleManagementWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Управление графиком" Height="600" Width="800">
-    <Grid>
-        <TextBlock Text="Управление графиком" 
-                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        Title="Управление графиком работы" Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#FF3F51B5" Padding="15">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="🕒" FontSize="24" Margin="0,0,15,0" Foreground="White"/>
+                <TextBlock Text="Управление графиком работы" FontSize="18" FontWeight="Bold" Foreground="White"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Календарь и список смен -->
+            <Grid Grid.Column="0" Margin="0,0,10,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Выбор недели -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                    <Button Content="◀" Click="PreviousWeek_Click" Width="30"/>
+                    <TextBlock Name="tbWeekRange" FontWeight="Bold" Margin="10,0" VerticalAlignment="Center"/>
+                    <Button Content="▶" Click="NextWeek_Click" Width="30"/>
+                    <Button Content="Текущая неделя" Click="CurrentWeek_Click" Margin="10,0"/>
+                </StackPanel>
+
+                <!-- Таблица расписания -->
+                <DataGrid Grid.Row="1" Name="dgSchedule" AutoGenerateColumns="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Сотрудник" Binding="{Binding EmployeeName}" Width="150"/>
+                        <DataGridTextColumn Header="Понедельник" Binding="{Binding Monday}" Width="100"/>
+                        <DataGridTextColumn Header="Вторник" Binding="{Binding Tuesday}" Width="100"/>
+                        <DataGridTextColumn Header="Среда" Binding="{Binding Wednesday}" Width="100"/>
+                        <DataGridTextColumn Header="Четверг" Binding="{Binding Thursday}" Width="100"/>
+                        <DataGridTextColumn Header="Пятница" Binding="{Binding Friday}" Width="100"/>
+                        <DataGridTextColumn Header="Суббота" Binding="{Binding Saturday}" Width="100"/>
+                        <DataGridTextColumn Header="Воскресенье" Binding="{Binding Sunday}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+
+            <!-- Форма добавления смены -->
+            <Border Grid.Column="1" Background="#FFF5F5F5" Padding="15" CornerRadius="5">
+                <StackPanel>
+                    <TextBlock Text="Добавить смену" 
+                              FontWeight="Bold" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Сотрудник:" Margin="0,0,0,5"/>
+                    <ComboBox Name="cbEmployee" DisplayMemberPath="name_employee" 
+                             SelectedValuePath="id_employee" Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Дата:" Margin="0,0,0,5"/>
+                    <DatePicker Name="dpWorkDate" Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Начало смены:" Margin="0,0,0,5"/>
+                    <ComboBox Name="cbStartTime" Margin="0,0,0,5">
+                        <ComboBoxItem Content="08:00"/>
+                        <ComboBoxItem Content="09:00"/>
+                        <ComboBoxItem Content="10:00"/>
+                        <ComboBoxItem Content="11:00"/>
+                        <ComboBoxItem Content="12:00"/>
+                        <ComboBoxItem Content="13:00"/>
+                        <ComboBoxItem Content="14:00"/>
+                        <ComboBoxItem Content="15:00"/>
+                        <ComboBoxItem Content="16:00"/>
+                        <ComboBoxItem Content="17:00"/>
+                        <ComboBoxItem Content="18:00"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Конец смены:" Margin="0,0,0,5"/>
+                    <ComboBox Name="cbEndTime" Margin="0,0,0,15">
+                        <ComboBoxItem Content="14:00"/>
+                        <ComboBoxItem Content="15:00"/>
+                        <ComboBoxItem Content="16:00"/>
+                        <ComboBoxItem Content="17:00"/>
+                        <ComboBoxItem Content="18:00"/>
+                        <ComboBoxItem Content="19:00"/>
+                        <ComboBoxItem Content="20:00"/>
+                        <ComboBoxItem Content="21:00"/>
+                        <ComboBoxItem Content="22:00"/>
+                        <ComboBoxItem Content="23:00"/>
+                        <ComboBoxItem Content="00:00"/>
+                    </ComboBox>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Добавить" Click="AddShift_Click" 
+                               Background="#FF3F51B5" Foreground="White" 
+                               Padding="10,5" Margin="0,0,10,0"/>
+                        <Button Content="Очистить" Click="ClearForm_Click" 
+                               Padding="10,5"/>
+                    </StackPanel>
+
+                    <Separator Margin="0,20,0,10"/>
+
+                    <Button Content="Экспорт в Excel" Click="ExportToExcel_Click" 
+                           Background="#FF4CAF50" Foreground="White" 
+                           Padding="10,5" Margin="0,10,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#FFF5F5F5" Padding="10" Margin="0,10,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Главное меню" Click="MainMenuButton_Click"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>
