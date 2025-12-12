@@ -8,12 +8,12 @@ namespace material_design
 {
     public partial class autorization : Window
     {
-        private cafe_barEntities1 db;
+        private cafe_barEntities db;
 
         public autorization()
         {
             InitializeComponent();
-            db = new cafe_barEntities1();
+            db = new cafe_barEntities();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -29,7 +29,6 @@ namespace material_design
                     return;
                 }
 
-                // Ищем пользователя в таблице авторизации
                 var user = db.Autorization.FirstOrDefault(u => u.Login == login);
 
                 if (user == null)
@@ -38,16 +37,16 @@ namespace material_design
                     return;
                 }
 
-                // Проверяем пароль с использованием соли
                 bool isPasswordValid = PasswordHelper.VerifyPassword(password, user.PasswordHash, user.Salt);
 
                 if (isPasswordValid)
                 {
-                    // Получаем уровень доступа из таблицы Autorization
                     int accessLevel = user.accessLevel;
                     string roleName = AccessControl.GetRoleName(accessLevel);
 
-                    // Успешный вход
+                    // Устанавливаем текущего пользователя
+                    Appp.SetCurrentUser(user);
+
                     new MainDashboard(login, roleName, accessLevel).Show();
                     this.Close();
                 }
@@ -61,8 +60,7 @@ namespace material_design
                 MessageBox.Show($"Ошибка авторизации: {ex.Message}");
             }
         }
-
-        // ... остальные методы для работы с UI (без изменений)
+        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
             var textBox = sender as TextBox;
@@ -100,6 +98,26 @@ namespace material_design
             {
                 passwordBox.Password = passwordBox.Tag?.ToString();
                 passwordBox.Foreground = System.Windows.Media.Brushes.Gray;
+            }
+        }
+        private void Button_Click11(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                RegistrationWindow registrationWindow = new RegistrationWindow();
+
+                // Если нужно передать данные из текущей формы
+                // registrationWindow.Owner = this;
+
+                registrationWindow.Show();
+
+                // Можно закрыть текущее окно или оставить открытым
+                // this.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка открытия формы регистрации: {ex.Message}",
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

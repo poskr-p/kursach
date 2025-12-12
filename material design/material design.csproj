@@ -8,7 +8,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>material_design</RootNamespace>
     <AssemblyName>material design</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
@@ -36,6 +36,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>material_design.App</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ClosedXML, Version=0.105.0.0, Culture=neutral, PublicKeyToken=fd1eb21b62ae805b, processorArchitecture=MSIL">
@@ -114,6 +117,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="AccessControl.cs" />
+    <Compile Include="Appp.cs" />
     <Compile Include="Autorization.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
@@ -196,11 +200,17 @@
     <Compile Include="ScheduleManagementWindow.xaml.cs">
       <DependentUpon>ScheduleManagementWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="sysdiagrams.cs">
+      <DependentUpon>Model1.tt</DependentUpon>
+    </Compile>
     <Compile Include="UserManagementWindow.xaml.cs">
       <DependentUpon>UserManagementWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Window2.xaml.cs">
       <DependentUpon>Window2.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WorkSchedule.cs">
+      <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
     <Page Include="autorization.xaml">
       <Generator>MSBuild:Compile</Generator>

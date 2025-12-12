@@ -10,12 +10,12 @@ namespace material_design
 {
     public partial class ReportsWindow : Window
     {
-        private cafe_barEntities1 db;
+        private cafe_barEntities db;
 
         public ReportsWindow()
         {
             InitializeComponent();
-            db = new cafe_barEntities1();
+            db = new cafe_barEntities();
 
             // Устанавливаем даты по умолчанию
             dpStartDate.SelectedDate = DateTime.Today.AddDays(-30);

@@ -8,7 +8,7 @@ namespace material_design
 {
     public partial class filtering : Window
     {
-        private cafe_barEntities1 db;
+        private cafe_barEntities db;
         private string currentDataType = "Сотрудники";
 
         public filtering()
@@ -16,7 +16,7 @@ namespace material_design
             try
             {
                 InitializeComponent();
-                db = new cafe_barEntities1();
+                db = new cafe_barEntities();
 
                 // Устанавливаем начальный выбор
                 cbDataType.SelectedIndex = 0;

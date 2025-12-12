@@ -43,6 +43,7 @@
             <Button Content="Отмена"
                     Width="120" Height="30"
                     Background="LightGray"/>
+            <Button Content="registr" Width="  100" Margin="24" Background="AliceBlue" Click="Button_Click11"></Button>
         </StackPanel>
 
         

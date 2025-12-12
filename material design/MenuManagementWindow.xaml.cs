@@ -7,13 +7,13 @@ namespace material_design
 {
     public partial class MenuManagementWindow : Window
     {
-        private cafe_barEntities1 db;
+        private cafe_barEntities db;
         private Menu currentMenuItem;
 
         public MenuManagementWindow()
         {
             InitializeComponent();
-            db = new cafe_barEntities1();
+            db = new cafe_barEntities();
             InitializeData();
             LoadMenuItems();
         }

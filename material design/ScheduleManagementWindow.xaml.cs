@@ -8,7 +8,7 @@ namespace material_design
 {
     public partial class ScheduleManagementWindow : Window
     {
-        private cafe_barEntities1 db;
+        private cafe_barEntities db;
         private DateTime currentWeekStart;
 
         public class EmployeeSchedule
@@ -26,7 +26,7 @@ namespace material_design
         public ScheduleManagementWindow()
         {
             InitializeComponent();
-            db = new cafe_barEntities1();
+            db = new cafe_barEntities();
             InitializeData();
             currentWeekStart = GetStartOfWeek(DateTime.Today);
             UpdateWeekDisplay();

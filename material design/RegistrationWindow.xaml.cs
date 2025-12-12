@@ -21,12 +21,12 @@ namespace material_design
     /// </summary>
     public partial class RegistrationWindow : Window
     {
-        private cafe_barEntities1 db;
+        private cafe_barEntities db;
 
         public RegistrationWindow()
         {
             InitializeComponent();
-            db = new cafe_barEntities1();
+            db = new cafe_barEntities();
             UsernameTextBox.Text = UsernameTextBox.Tag.ToString();
             UsernameTextBox.Foreground = Brushes.Gray;
             PasswordBox.Password = PasswordBox.Tag.ToString();

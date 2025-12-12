@@ -10,7 +10,7 @@ namespace material_design
 {
     public partial class OrderTakingWindow : Window
     {
-        private cafe_barEntities1 db;
+        private cafe_barEntities db;
         private int currentUserAccessLevel;
         private List<OrderItem> currentOrderItems;
         private int currentEmployeeId;
@@ -27,7 +27,7 @@ namespace material_design
         public OrderTakingWindow(int accessLevel, int employeeId = 0)
         {
             InitializeComponent();
-            db = new cafe_barEntities1();
+            db = new cafe_barEntities();
             currentUserAccessLevel = accessLevel;
             currentEmployeeId = employeeId;
             currentOrderItems = new List<OrderItem>();

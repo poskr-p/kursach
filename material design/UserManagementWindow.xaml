@@ -28,10 +28,12 @@
 
             <!-- Список пользователей -->
             <DataGrid Grid.Column="0" Name="dgUsers" AutoGenerateColumns="False"
-                     Margin="0,0,10,0" SelectionChanged="dgUsers_SelectionChanged">
+                     Margin="0,0,10,0" SelectionChanged="dgUsers_SelectionChanged"
+                     CanUserAddRows="False" CanUserDeleteRows="False">
                 <DataGrid.Columns>
+                    <DataGridTextColumn Header="ID" Binding="{Binding id}" Width="50"/>
                     <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="150"/>
-                    <DataGridTextColumn Header="Уровень доступа" Binding="{Binding accessLevel}" Width="120"/>
+                    <DataGridTextColumn Header="Уровень доступа" Binding="{Binding accessLevel}" Width="100"/>
                     <DataGridTextColumn Header="Роль" Binding="{Binding RoleName}" Width="150"/>
                 </DataGrid.Columns>
             </DataGrid>
@@ -50,15 +52,16 @@
 
                     <TextBlock Text="Уровень доступа:" Margin="0,0,0,5"/>
                     <ComboBox Name="cbAccessLevel" DisplayMemberPath="Value" 
-                             SelectedValuePath="Key" Margin="0,0,0,15"/>
+                             SelectedValuePath="Key" Margin="0,0,0,15"
+                             SelectionChanged="dgUsers_SelectionChanged"/>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Сохранить" Click="SaveUser_Click" 
+                        <Button Name="btnSave" Content="Сохранить" Click="SaveUser_Click" 
                                Background="#FF3F51B5" Foreground="White" 
                                Padding="10,5" Margin="0,0,10,0"/>
-                        <Button Content="Удалить" Click="DeleteUser_Click" 
+                        <Button Name="btnDelete" Content="Удалить" Click="DeleteUser_Click" 
                                Background="#FFD32F2F" Foreground="White" 
-                               Padding="10,5" Margin="0,0,10,0"/>
+                               Padding="10,5" Margin="0,0,10,0" IsEnabled="False"/>
                         <Button Content="Очистить" Click="ClearForm_Click" 
                                Padding="10,5"/>
                     </StackPanel>

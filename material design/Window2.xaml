@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Просмотр таблиц" Height="700" Width="1200"
         Loaded="Window_Loaded" Closing="Window_Closing">
-
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -15,7 +15,7 @@
         <Border Grid.Column="0" Width="200" Background="#FFF5F5F5" BorderBrush="#FFE0E0E0" BorderThickness="0,0,1,0">
             <StackPanel>
                 <TextBlock Text="Таблицы" FontSize="16" FontWeight="Bold" Margin="10,20,10,10"/>
-
+                
                 <ListView Name="lvTables" SelectionChanged="lvTables_SelectionChanged" Background="Transparent">
                     <ListView.ItemTemplate>
                         <DataTemplate>
@@ -51,17 +51,17 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Name="spEditPanel" Margin="10" Visibility="Collapsed">
                     <TextBlock Name="tbEditTitle" Text="Редактирование" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
-
+                    
                     <!-- Поля для редактирования будут добавляться динамически -->
                     <StackPanel Name="spFields"/>
-
+                    
                     <!-- Кнопки CRUD -->
                     <StackPanel Margin="0,20,0,0" HorizontalAlignment="Right" Orientation="Horizontal">
                         <Button Name="btnAdd" Content="Добавить" Click="btnAdd_Click" Margin="0,0,10,0" Width="80"/>
                         <Button Name="btnEdit" Content="Сохранить" Click="btnEdit_Click" Margin="0,0,10,0" Width="80"/>
                         <Button Name="btnDelete" Content="Удалить" Click="btnDelete_Click" Width="80"/>
                     </StackPanel>
-
+                    
                     <Button Name="btnBack" Content="Главное меню" Click="btnBack_Click" 
                             Margin="0,20,0,0" HorizontalAlignment="Center"/>
                 </StackPanel>

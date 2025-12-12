@@ -12,19 +12,14 @@ namespace material_design
     using System;
     using System.Collections.Generic;
     
-    public partial class Post
+    public partial class WorkSchedule
     {
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
-        public Post()
-        {
-            this.Employees = new HashSet<Employees>();
-        }
+        public int id_schedule { get; set; }
+        public int id_employee_fk { get; set; }
+        public System.DateTime work_date { get; set; }
+        public System.TimeSpan start_time { get; set; }
+        public System.TimeSpan end_time { get; set; }
     
-        public int id_post { get; set; }
-        public string title_post { get; set; }
-        public byte accessLevel { get; set; }
-    
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
-        public virtual ICollection<Employees> Employees { get; set; }
+        public virtual Employees Employees { get; set; }
     }
 }

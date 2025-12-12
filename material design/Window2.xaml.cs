@@ -6,16 +6,19 @@ using System.Windows.Controls;
 using System.Data.Entity;
 using System.Reflection;
 using System.ComponentModel.DataAnnotations;
+using System.Collections;
 
 namespace material_design
 {
     public partial class Window2 : Window
     {
-        private cafe_barEntities1 _db = new cafe_barEntities1();
+        private cafe_barEntities _db = new cafe_barEntities();
         private string _currentTable;
         private object _currentEntity;
         private Dictionary<string, Type> _tableTypes = new Dictionary<string, Type>();
-        private Dictionary<string, StackPanel> _fieldPanels = new Dictionary<string, StackPanel>();
+        private Dictionary<string, Control> _fieldControls = new Dictionary<string, Control>();
+        private Dictionary<string, ComboBox> _comboBoxControls = new Dictionary<string, ComboBox>();
+        private List<string> _excludedProperties = new List<string> { "photo_data" };
 
         public Window2()
         {
@@ -25,7 +28,7 @@ namespace material_design
 
         private void InitializeTableTypes()
         {
-            // Исключаем таблицу авторизации
+            // Используем English имена из RussianTranslator
             _tableTypes.Add("Должности", typeof(Post));
             _tableTypes.Add("Сотрудники", typeof(Employees));
             _tableTypes.Add("Клиенты", typeof(Clients));
@@ -70,126 +73,87 @@ namespace material_design
             {
                 Type entityType = _tableTypes[_currentTable];
                 var dbSet = _db.Set(entityType);
-                var query = ((IQueryable)dbSet).IncludeAll();
 
-                dataGrid.ItemsSource = query.ToList(entityType);
-                tbStatus.Text = $"Загружено записей: {((System.Collections.IList)dataGrid.ItemsSource).Count}";
+                // Получаем данные без навигационных свойств
+                var data = ((IQueryable)dbSet).AsNoTracking().ToList(entityType);
+
+                // Настраиваем DataGrid
+                dataGrid.ItemsSource = data;
+                dataGrid.AutoGenerateColumns = false;
+                dataGrid.Columns.Clear();
+
+                // Создаем колонки вручную для контроля
+                CreateDataGridColumns(entityType);
+
+                tbStatus.Text = $"Загружено записей: {((IList)data).Count}";
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}");
+                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}\n{ex.InnerException?.Message}");
+            }
+        }
+
+        private void CreateDataGridColumns(Type entityType)
+        {
+            var properties = entityType.GetProperties()
+                .Where(p => !IsNavigationProperty(p) &&
+                           !_excludedProperties.Contains(p.Name) &&
+                           IsSimpleType(p.PropertyType))
+                .ToList();
+
+            foreach (var prop in properties)
+            {
+                var column = new DataGridTextColumn
+                {
+                    Header = RussianTranslator.GetFieldName(prop.Name),
+                    Binding = new System.Windows.Data.Binding(prop.Name)
+                };
+
+                // Форматирование для разных типов данных
+                if (prop.PropertyType == typeof(decimal) || prop.PropertyType == typeof(decimal?))
+                {
+                    column.Binding.StringFormat = "F2";
+                }
+                else if (prop.PropertyType == typeof(DateTime) || prop.PropertyType == typeof(DateTime?))
+                {
+                    column.Binding.StringFormat = "dd.MM.yyyy HH:mm";
+                }
+
+                dataGrid.Columns.Add(column);
             }
         }
 
         private void CreateEditFields()
         {
             spFields.Children.Clear();
-            _fieldPanels.Clear();
+            _fieldControls.Clear();
+            _comboBoxControls.Clear();
 
             Type entityType = _tableTypes[_currentTable];
+
+            // Получаем все простые свойства, исключая навигационные
             var properties = entityType.GetProperties()
-                .Where(p => p.Name != "id" &&
-                           !p.Name.EndsWith("_fk") &&
-                           !p.Name.Contains("photo_data") &&
-                           p.CanWrite);
+                .Where(p => !IsNavigationProperty(p) &&
+                           !_excludedProperties.Contains(p.Name) &&
+                           !p.Name.EndsWith("_fk")) // Внешние ключи обрабатываем отдельно
+                .Where(p => IsSimpleType(p.PropertyType))
+                .OrderBy(p => p.Name) // Сортируем для красивого отображения
+                .ToList();
 
             foreach (var prop in properties)
             {
-                var stackPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
-
-                string displayName = GetDisplayName(prop);
-                var textBlock = new TextBlock
-                {
-                    Text = displayName + ":",
-                    Margin = new Thickness(0, 0, 0, 5),
-                    FontWeight = FontWeights.Normal
-                };
-
-                Control inputControl;
-
-                if (prop.PropertyType == typeof(string))
-                {
-                    inputControl = new TextBox();
-                    ((TextBox)inputControl).TextChanged += (s, e) => UpdateCurrentEntity(prop, ((TextBox)s).Text);
-                }
-                else if (prop.PropertyType == typeof(int) || prop.PropertyType == typeof(decimal))
-                {
-                    inputControl = new TextBox();
-                    ((TextBox)inputControl).TextChanged += (s, e) => UpdateCurrentEntity(prop, ((TextBox)s).Text);
-                }
-                else if (prop.PropertyType == typeof(DateTime))
-                {
-                    inputControl = new DatePicker();
-                    ((DatePicker)inputControl).SelectedDateChanged += (s, e) =>
-                        UpdateCurrentEntity(prop, ((DatePicker)s).SelectedDate);
-                }
-                else if (prop.PropertyType == typeof(byte) || prop.PropertyType == typeof(short))
-                {
-                    inputControl = new TextBox();
-                    ((TextBox)inputControl).TextChanged += (s, e) => UpdateCurrentEntity(prop, ((TextBox)s).Text);
-                }
-                else
-                {
-                    inputControl = new TextBox();
-                    ((TextBox)inputControl).TextChanged += (s, e) => UpdateCurrentEntity(prop, ((TextBox)s).Text);
-                }
-
-                inputControl.Tag = prop.Name;
-                inputControl.Margin = new Thickness(0, 0, 0, 5);
-
-                stackPanel.Children.Add(textBlock);
-                stackPanel.Children.Add(inputControl);
-
-                spFields.Children.Add(stackPanel);
-                _fieldPanels[prop.Name] = stackPanel;
+                CreateField(prop);
             }
 
             // Добавляем поля для внешних ключей
             AddForeignKeyFields(entityType);
         }
 
-        private string GetDisplayName(PropertyInfo prop)
-        {
-            var displayAttr = prop.GetCustomAttribute<DisplayAttribute>();
-            return displayAttr?.Name ?? RussianTranslator.GetFieldName(prop.Name) ?? prop.Name;
-        }
-
-        private void AddForeignKeyFields(Type entityType)
-        {
-            // Для таблиц с внешними ключами добавляем ComboBox
-            if (_currentTable == "Сотрудники")
-            {
-                AddComboBoxField("post_emp_fk", "Должность", _db.Post.ToList(), "title_post", "id_post");
-            }
-            else if (_currentTable == "Постоянные клиенты")
-            {
-                AddComboBoxField("id_reg_client_fk", "Клиент", _db.Clients.ToList(), "name_client", "id_client");
-            }
-            else if (_currentTable == "Бронирования")
-            {
-                AddComboBoxField("id_client_fk", "Клиент", _db.Clients.ToList(), "name_client", "id_client");
-                AddComboBoxField("id_employee_fk", "Сотрудник", _db.Employees.ToList(), "name_employee", "id_employee");
-            }
-            else if (_currentTable == "Меню")
-            {
-                AddComboBoxField("id_category_fk", "Категория", _db.CategoriesMenu.ToList(), "title_category", "id_category");
-            }
-            else if (_currentTable == "Заказы")
-            {
-                AddComboBoxField("id_cli_fk", "Клиент", _db.Clients.ToList(), "name_client", "id_client");
-                AddComboBoxField("id_emp_fk", "Сотрудник", _db.Employees.ToList(), "name_employee", "id_employee");
-            }
-            else if (_currentTable == "Детали заказов")
-            {
-                AddComboBoxField("id_order_fk", "Заказ", _db.Orders.ToList(), "id_order", "id_order");
-                AddComboBoxField("id_menu_item_fk", "Позиция меню", _db.Menu.ToList(), "item_name", "id_menu_item");
-            }
-        }
-
-        private void AddComboBoxField(string propertyName, string displayName,
-            System.Collections.IEnumerable items, string displayMember, string valueMember)
+        private void CreateField(PropertyInfo prop)
         {
             var stackPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+
+            string displayName = RussianTranslator.GetFieldName(prop.Name);
             var textBlock = new TextBlock
             {
                 Text = displayName + ":",
@@ -197,74 +161,282 @@ namespace material_design
                 FontWeight = FontWeights.Normal
             };
 
+            Control inputControl = CreateInputControl(prop);
+
+            if (inputControl != null)
+            {
+                stackPanel.Children.Add(textBlock);
+                stackPanel.Children.Add(inputControl);
+                spFields.Children.Add(stackPanel);
+
+                _fieldControls[prop.Name] = inputControl;
+            }
+        }
+
+        private Control CreateInputControl(PropertyInfo prop)
+        {
+            var controlType = GetControlTypeForProperty(prop.PropertyType);
+
+            switch (controlType)
+            {
+                case ControlType.TextBox:
+                    var textBox = new TextBox();
+                    textBox.TextChanged += (s, e) => UpdateCurrentEntity(prop, ((TextBox)s).Text);
+                    return textBox;
+
+                case ControlType.NumericTextBox:
+                    var numTextBox = new TextBox();
+                    numTextBox.PreviewTextInput += (s, e) =>
+                        e.Handled = !char.IsDigit(e.Text, 0) && e.Text != "-" && e.Text != ".";
+                    numTextBox.TextChanged += (s, e) => UpdateCurrentEntity(prop, ((TextBox)s).Text);
+                    return numTextBox;
+
+                case ControlType.DatePicker:
+                    var datePicker = new DatePicker();
+                    datePicker.SelectedDateChanged += (s, e) =>
+                        UpdateCurrentEntity(prop, ((DatePicker)s).SelectedDate);
+                    return datePicker;
+
+                case ControlType.ComboBox:
+                    // Для простых enum или справочников
+                    var comboBox = new ComboBox();
+                    comboBox.SelectionChanged += (s, e) =>
+                        UpdateCurrentEntity(prop, ((ComboBox)s).SelectedValue);
+                    return comboBox;
+
+                default:
+                    return new TextBox();
+            }
+        }
+
+        private ControlType GetControlTypeForProperty(Type propertyType)
+        {
+            var type = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+
+            if (type == typeof(string))
+                return ControlType.TextBox;
+            else if (type == typeof(int) || type == typeof(decimal) || type == typeof(double) ||
+                     type == typeof(float) || type == typeof(byte) || type == typeof(short))
+                return ControlType.NumericTextBox;
+            else if (type == typeof(DateTime))
+                return ControlType.DatePicker;
+            else if (type.IsEnum)
+                return ControlType.ComboBox;
+            else
+                return ControlType.TextBox;
+        }
+
+        private bool IsSimpleType(Type type)
+        {
+            type = Nullable.GetUnderlyingType(type) ?? type;
+
+            return type.IsPrimitive ||
+                   type == typeof(string) ||
+                   type == typeof(decimal) ||
+                   type == typeof(DateTime) ||
+                   type == typeof(Guid) ||
+                   type.IsEnum;
+        }
+
+        private bool IsNavigationProperty(PropertyInfo prop)
+        {
+            var propType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+
+            // Навигационные свойства обычно являются коллекциями или ссылками на другие сущности
+            if (propType.IsClass && propType != typeof(string) && propType != typeof(byte[]))
+            {
+                // Проверяем, является ли тип коллекцией
+                if (typeof(IEnumerable).IsAssignableFrom(propType) && propType != typeof(string))
+                    return true;
+
+                // Проверяем, есть ли в контексте DbSet для этого типа
+                var dbSetProperties = typeof(cafe_barEntities).GetProperties()
+                    .Where(p => p.PropertyType.IsGenericType &&
+                               p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>));
+
+                foreach (var dbSetProp in dbSetProperties)
+                {
+                    var entityType = dbSetProp.PropertyType.GetGenericArguments()[0];
+                    if (entityType == propType || propType.IsAssignableFrom(entityType))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void AddForeignKeyFields(Type entityType)
+        {
+            // Определяем внешние ключи для текущей таблицы
+            var fkProperties = entityType.GetProperties()
+                .Where(p => p.Name.EndsWith("_fk") && !_excludedProperties.Contains(p.Name))
+                .ToList();
+
+            foreach (var fkProp in fkProperties)
+            {
+                AddForeignKeyComboBox(fkProp);
+            }
+        }
+
+        private void AddForeignKeyComboBox(PropertyInfo fkProperty)
+        {
+            var stackPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+
+            string displayName = RussianTranslator.GetFieldName(fkProperty.Name);
+            var textBlock = new TextBlock
+            {
+                Text = displayName + ":",
+                Margin = new Thickness(0, 0, 0, 5),
+                FontWeight = FontWeights.Normal
+            };
+
+            // Определяем связанную таблицу и поля для ComboBox
+            var comboBoxInfo = GetComboBoxInfo(fkProperty.Name);
+            if (comboBoxInfo == null) return;
+
             var comboBox = new ComboBox
             {
-                DisplayMemberPath = displayMember,
-                SelectedValuePath = valueMember,
-                ItemsSource = items,
-                Margin = new Thickness(0, 0, 0, 5)
+                DisplayMemberPath = comboBoxInfo.DisplayMember,
+                SelectedValuePath = comboBoxInfo.ValueMember,
+                ItemsSource = comboBoxInfo.ItemsSource,
+                Margin = new Thickness(0, 0, 0, 5),
+                Tag = fkProperty.Name
             };
 
             comboBox.SelectionChanged += (s, e) =>
             {
                 if (comboBox.SelectedValue != null && _currentEntity != null)
                 {
-                    var prop = _currentEntity.GetType().GetProperty(propertyName);
-                    if (prop != null)
+                    try
                     {
-                        prop.SetValue(_currentEntity, comboBox.SelectedValue);
+                        var value = Convert.ChangeType(comboBox.SelectedValue, fkProperty.PropertyType);
+                        fkProperty.SetValue(_currentEntity, value);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Ошибка установки значения: {ex.Message}");
                     }
                 }
             };
 
             stackPanel.Children.Add(textBlock);
             stackPanel.Children.Add(comboBox);
-
             spFields.Children.Add(stackPanel);
-            _fieldPanels[propertyName] = stackPanel;
+
+            _comboBoxControls[fkProperty.Name] = comboBox;
+        }
+
+        private ComboBoxInfo GetComboBoxInfo(string fkPropertyName)
+        {
+            switch (_currentTable)
+            {
+                case "Сотрудники":
+                    if (fkPropertyName == "post_emp_fk")
+                        return new ComboBoxInfo(_db.Post.ToList(), "title_post", "id_post");
+                    break;
+
+                case "Постоянные клиенты":
+                    if (fkPropertyName == "id_reg_client_fk")
+                        return new ComboBoxInfo(_db.Clients.ToList(), "name_client", "id_client");
+                    break;
+
+                case "Бронирования":
+                    if (fkPropertyName == "id_client_fk")
+                        return new ComboBoxInfo(_db.Clients.ToList(), "name_client", "id_client");
+                    if (fkPropertyName == "id_employee_fk")
+                        return new ComboBoxInfo(_db.Employees.ToList(), "name_employee", "id_employee");
+                    break;
+
+                case "Меню":
+                    if (fkPropertyName == "id_category_fk")
+                        return new ComboBoxInfo(_db.CategoriesMenu.ToList(), "title_category", "id_category");
+                    break;
+
+                case "Заказы":
+                    if (fkPropertyName == "id_cli_fk")
+                        return new ComboBoxInfo(_db.Clients.ToList(), "name_client", "id_client");
+                    if (fkPropertyName == "id_emp_fk")
+                        return new ComboBoxInfo(_db.Employees.ToList(), "name_employee", "id_employee");
+                    break;
+
+                case "Детали заказов":
+                    if (fkPropertyName == "id_order_fk")
+                        return new ComboBoxInfo(_db.Orders.ToList(), "id_order", "id_order");
+                    if (fkPropertyName == "id_menu_item_fk")
+                        return new ComboBoxInfo(_db.Menu.ToList(), "item_name", "id_menu_item");
+                    break;
+            }
+
+            return null;
         }
 
         private void UpdateCurrentEntity(PropertyInfo prop, object value)
         {
-            if (_currentEntity != null)
+            if (_currentEntity != null && prop != null)
             {
                 try
                 {
-                    if (value == null)
+                    object convertedValue = null;
+
+                    if (value == null || string.IsNullOrEmpty(value.ToString()))
                     {
-                        prop.SetValue(_currentEntity, null);
+                        convertedValue = GetDefaultValue(prop.PropertyType);
                     }
-                    else if (prop.PropertyType == typeof(string))
+                    else
                     {
-                        prop.SetValue(_currentEntity, value.ToString());
+                        convertedValue = ConvertValue(prop.PropertyType, value);
                     }
-                    else if (prop.PropertyType == typeof(int))
-                    {
-                        if (int.TryParse(value.ToString(), out int intValue))
-                            prop.SetValue(_currentEntity, intValue);
-                    }
-                    else if (prop.PropertyType == typeof(decimal))
-                    {
-                        if (decimal.TryParse(value.ToString(), out decimal decimalValue))
-                            prop.SetValue(_currentEntity, decimalValue);
-                    }
-                    else if (prop.PropertyType == typeof(DateTime))
-                    {
-                        prop.SetValue(_currentEntity, value);
-                    }
-                    else if (prop.PropertyType == typeof(byte))
-                    {
-                        if (byte.TryParse(value.ToString(), out byte byteValue))
-                            prop.SetValue(_currentEntity, byteValue);
-                    }
-                    else if (prop.PropertyType == typeof(short))
-                    {
-                        if (short.TryParse(value.ToString(), out short shortValue))
-                            prop.SetValue(_currentEntity, shortValue);
-                    }
+
+                    prop.SetValue(_currentEntity, convertedValue);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Ошибка обновления свойства {prop.Name}: {ex.Message}");
+                }
             }
+        }
+
+        private object ConvertValue(Type targetType, object value)
+        {
+            if (value == null) return null;
+
+            targetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+            var stringValue = value.ToString();
+
+            try
+            {
+                if (targetType == typeof(string))
+                    return stringValue;
+                else if (targetType == typeof(int))
+                    return int.Parse(stringValue);
+                else if (targetType == typeof(decimal))
+                    return decimal.Parse(stringValue);
+                else if (targetType == typeof(DateTime))
+                    return DateTime.Parse(stringValue);
+                else if (targetType == typeof(byte))
+                    return byte.Parse(stringValue);
+                else if (targetType == typeof(short))
+                    return short.Parse(stringValue);
+                else if (targetType == typeof(bool))
+                    return bool.Parse(stringValue);
+                else if (targetType.IsEnum)
+                    return Enum.Parse(targetType, stringValue);
+                else
+                    return Convert.ChangeType(value, targetType);
+            }
+            catch
+            {
+                return GetDefaultValue(targetType);
+            }
+        }
+
+        private object GetDefaultValue(Type type)
+        {
+            if (type.IsValueType)
+            {
+                return Activator.CreateInstance(type);
+            }
+            return null;
         }
 
         private void dataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -272,32 +444,38 @@ namespace material_design
             _currentEntity = dataGrid.SelectedItem;
             if (_currentEntity == null) return;
 
-            // Заполняем поля значениями из выбранной сущности
-            foreach (var kvp in _fieldPanels)
+            // Заполняем текстовые поля и DatePicker
+            foreach (var kvp in _fieldControls)
             {
                 var propertyName = kvp.Key;
-                var stackPanel = kvp.Value;
-
-                var inputControl = stackPanel.Children[1] as Control;
-                if (inputControl == null) continue;
+                var control = kvp.Value;
 
                 var prop = _currentEntity.GetType().GetProperty(propertyName);
                 if (prop == null) continue;
 
                 var value = prop.GetValue(_currentEntity);
 
-                if (inputControl is TextBox textBox)
+                if (control is TextBox textBox)
                 {
                     textBox.Text = value?.ToString() ?? "";
                 }
-                else if (inputControl is DatePicker datePicker && value is DateTime dateTime)
+                else if (control is DatePicker datePicker)
                 {
-                    datePicker.SelectedDate = dateTime;
+                    datePicker.SelectedDate = value as DateTime?;
                 }
-                else if (inputControl is ComboBox comboBox)
-                {
-                    comboBox.SelectedValue = value;
-                }
+            }
+
+            // Заполняем ComboBox для внешних ключей
+            foreach (var kvp in _comboBoxControls)
+            {
+                var propertyName = kvp.Key;
+                var comboBox = kvp.Value;
+
+                var prop = _currentEntity.GetType().GetProperty(propertyName);
+                if (prop == null) continue;
+
+                var value = prop.GetValue(_currentEntity);
+                comboBox.SelectedValue = value;
             }
         }
 
@@ -308,29 +486,31 @@ namespace material_design
                 Type entityType = _tableTypes[_currentTable];
                 _currentEntity = Activator.CreateInstance(entityType);
 
-                // Очищаем поля
-                foreach (var kvp in _fieldPanels)
-                {
-                    var stackPanel = kvp.Value;
-                    var inputControl = stackPanel.Children[1] as Control;
+                // Очищаем все поля
+                ClearAllFields();
 
-                    if (inputControl is TextBox textBox)
-                    {
-                        textBox.Text = "";
-                    }
-                    else if (inputControl is DatePicker datePicker)
-                    {
-                        datePicker.SelectedDate = null;
-                    }
-                    else if (inputControl is ComboBox comboBox)
-                    {
-                        comboBox.SelectedItem = null;
-                    }
-                }
+                MessageBox.Show("Создана новая запись. Заполните поля и нажмите 'Сохранить'",
+                    "Новая запись", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка создания новой записи: {ex.Message}");
+            }
+        }
+
+        private void ClearAllFields()
+        {
+            foreach (var control in _fieldControls.Values)
+            {
+                if (control is TextBox textBox)
+                    textBox.Text = "";
+                else if (control is DatePicker datePicker)
+                    datePicker.SelectedDate = null;
+            }
+
+            foreach (var comboBox in _comboBoxControls.Values)
+            {
+                comboBox.SelectedItem = null;
             }
         }
 
@@ -347,30 +527,51 @@ namespace material_design
                 Type entityType = _tableTypes[_currentTable];
                 var dbSet = _db.Set(entityType);
 
-                // Проверяем, новая ли это запись
-                var idProperty = entityType.GetProperty(entityType.Name.ToLower().Replace("s", "") + "_id") ??
-                               entityType.GetProperty("id") ??
-                               entityType.GetProperties().FirstOrDefault(p => p.Name.EndsWith("_id"));
+                // Определяем свойство ID
+                var idProperty = entityType.GetProperties()
+                    .FirstOrDefault(p => p.Name.ToLower().Contains("id") &&
+                                        !p.Name.ToLower().Contains("_fk"));
 
-                if (idProperty == null) return;
-
-                var idValue = idProperty.GetValue(_currentEntity);
-
-                if (idValue == null || Convert.ToInt32(idValue) == 0)
+                if (idProperty != null)
                 {
-                    // Новая запись
-                    dbSet.Add(_currentEntity);
+                    var idValue = idProperty.GetValue(_currentEntity);
+                    var id = Convert.ToInt32(idValue);
+
+                    if (id == 0) // Новая запись
+                    {
+                        dbSet.Add(_currentEntity);
+                        MessageBox.Show("Новая запись добавлена", "Успех",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else // Обновление существующей
+                    {
+                        var existing = dbSet.Find(idValue);
+                        if (existing != null)
+                        {
+                            // Копируем значения из _currentEntity в existing
+                            foreach (var prop in entityType.GetProperties()
+                                .Where(p => !IsNavigationProperty(p) && p.CanWrite))
+                            {
+                                var value = prop.GetValue(_currentEntity);
+                                prop.SetValue(existing, value);
+                            }
+                        }
+                        else
+                        {
+                            dbSet.Add(_currentEntity);
+                        }
+                    }
+
+                    _db.SaveChanges();
+                    LoadTableData();
+
+                    MessageBox.Show("Данные успешно сохранены", "Успех",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-
-                _db.SaveChanges();
-                LoadTableData();
-
-                MessageBox.Show("Данные успешно сохранены", "Успех",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка сохранения: {ex.Message}");
+                MessageBox.Show($"Ошибка сохранения: {ex.Message}\n{ex.InnerException?.Message}");
             }
         }
 
@@ -391,34 +592,30 @@ namespace material_design
             {
                 Type entityType = _tableTypes[_currentTable];
                 var dbSet = _db.Set(entityType);
-                dbSet.Remove(_currentEntity);
-                _db.SaveChanges();
 
-                LoadTableData();
-                _currentEntity = null;
+                // Находим запись в базе данных
+                var idProperty = entityType.GetProperties()
+                    .FirstOrDefault(p => p.Name.ToLower().Contains("id") &&
+                                        !p.Name.ToLower().Contains("_fk"));
 
-                // Очищаем поля
-                foreach (var kvp in _fieldPanels)
+                if (idProperty != null)
                 {
-                    var stackPanel = kvp.Value;
-                    var inputControl = stackPanel.Children[1] as Control;
+                    var idValue = idProperty.GetValue(_currentEntity);
+                    var entityToDelete = dbSet.Find(idValue);
 
-                    if (inputControl is TextBox textBox)
+                    if (entityToDelete != null)
                     {
-                        textBox.Text = "";
-                    }
-                    else if (inputControl is DatePicker datePicker)
-                    {
-                        datePicker.SelectedDate = null;
-                    }
-                    else if (inputControl is ComboBox comboBox)
-                    {
-                        comboBox.SelectedItem = null;
+                        dbSet.Remove(entityToDelete);
+                        _db.SaveChanges();
+
+                        LoadTableData();
+                        _currentEntity = null;
+                        ClearAllFields();
+
+                        MessageBox.Show("Запись успешно удалена", "Успех",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
-
-                MessageBox.Show("Запись успешно удалена", "Успех",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -435,23 +632,58 @@ namespace material_design
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            _db.Dispose();
+            _db?.Dispose();
+        }
+
+        // Вспомогательные классы
+        private class ComboBoxInfo
+        {
+            public IEnumerable ItemsSource { get; }
+            public string DisplayMember { get; }
+            public string ValueMember { get; }
+
+            public ComboBoxInfo(IEnumerable itemsSource, string displayMember, string valueMember)
+            {
+                ItemsSource = itemsSource;
+                DisplayMember = displayMember;
+                ValueMember = valueMember;
+            }
+        }
+
+        private enum ControlType
+        {
+            TextBox,
+            NumericTextBox,
+            DatePicker,
+            ComboBox
         }
     }
 
-    // Вспомогательные extension методы
+    // Extension методы
     public static class QueryableExtensions
     {
-        public static IQueryable IncludeAll(this IQueryable query)
+        public static IQueryable AsNoTracking(this IQueryable query)
         {
-            // Этот метод можно расширить для загрузки связанных данных
+            var method = typeof(System.Data.Entity.QueryableExtensions)
+                .GetMethods()
+                .FirstOrDefault(m => m.Name == "AsNoTracking" && m.IsGenericMethod);
+
+            if (method != null)
+            {
+                var genericMethod = method.MakeGenericMethod(query.ElementType);
+                return (IQueryable)genericMethod.Invoke(null, new object[] { query });
+            }
+
             return query;
         }
 
-        public static System.Collections.IList ToList(this IQueryable query, Type elementType)
+        public static IList ToList(this IQueryable query, Type elementType)
         {
-            var method = typeof(Enumerable).GetMethod("ToList").MakeGenericMethod(elementType);
-            return (System.Collections.IList)method.Invoke(null, new object[] { query });
+            var toListMethod = typeof(Enumerable).GetMethods()
+                .First(m => m.Name == "ToList" && m.IsGenericMethod)
+                .MakeGenericMethod(elementType);
+
+            return (IList)toListMethod.Invoke(null, new object[] { query });
         }
     }
 }

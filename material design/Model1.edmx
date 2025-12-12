@@ -4,13 +4,13 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-    <Schema Namespace="Хранилище cafe_barModel" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+      <Schema Namespace="Хранилище cafe_barModel" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityType Name="Autorization">
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="id" Type="int" Nullable="false" />
-          <Property Name="Login" Type="varchar" MaxLength="128" />
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Login" Type="nvarchar" MaxLength="128" Nullable="false" />
           <Property Name="PasswordHash" Type="nvarchar" MaxLength="128" Nullable="false" />
           <Property Name="Salt" Type="nvarchar" MaxLength="128" Nullable="false" />
           <Property Name="accessLevel" Type="tinyint" Nullable="false" />
@@ -98,6 +98,26 @@
           <Property Name="id_employee_fk" Type="int" Nullable="false" />
           <Property Name="reservation_date" Type="datetime" Nullable="false" />
           <Property Name="guests_count" Type="tinyint" Nullable="false" />
+        </EntityType>
+        <EntityType Name="sysdiagrams">
+          <Key>
+            <PropertyRef Name="diagram_id" />
+          </Key>
+          <Property Name="name" Type="nvarchar" MaxLength="128" Nullable="false" />
+          <Property Name="principal_id" Type="int" Nullable="false" />
+          <Property Name="diagram_id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="version" Type="int" />
+          <Property Name="definition" Type="varbinary(max)" />
+        </EntityType>
+        <EntityType Name="WorkSchedule">
+          <Key>
+            <PropertyRef Name="id_schedule" />
+          </Key>
+          <Property Name="id_schedule" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="id_employee_fk" Type="int" Nullable="false" />
+          <Property Name="work_date" Type="date" Nullable="false" />
+          <Property Name="start_time" Type="time" Precision="7" Nullable="false" />
+          <Property Name="end_time" Type="time" Precision="7" Nullable="false" />
         </EntityType>
         <Association Name="FK__Employees__email__3D5E1FD2">
           <End Role="Post" Type="Self.Post" Multiplicity="1" />
@@ -207,6 +227,18 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="FK__WorkSched__id_em__02FC7413">
+          <End Role="Employees" Type="Self.Employees" Multiplicity="1" />
+          <End Role="WorkSchedule" Type="Self.WorkSchedule" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Employees">
+              <PropertyRef Name="id_employee" />
+            </Principal>
+            <Dependent Role="WorkSchedule">
+              <PropertyRef Name="id_employee_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <EntityContainer Name="Хранилище cafe_barModelContainer">
           <EntitySet Name="Autorization" EntityType="Self.Autorization" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="CategoriesMenu" EntityType="Self.CategoriesMenu" Schema="dbo" store:Type="Tables" />
@@ -217,12 +249,14 @@
           <EntitySet Name="Orders" EntityType="Self.Orders" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Post" EntityType="Self.Post" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Reservation" EntityType="Self.Reservation" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="sysdiagrams" EntityType="Self.sysdiagrams" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="WorkSchedule" EntityType="Self.WorkSchedule" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Regular_Clients" EntityType="Self.Regular_Clients" store:Type="Tables" store:Schema="dbo">
             <DefiningQuery>SELECT 
-[Regular_Clients].[id_reg_client_fk] AS [id_reg_client_fk], 
-[Regular_Clients].[discount_rate] AS [discount_rate], 
-[Regular_Clients].[total_spent] AS [total_spent]
-FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
+    [Regular_Clients].[id_reg_client_fk] AS [id_reg_client_fk], 
+    [Regular_Clients].[discount_rate] AS [discount_rate], 
+    [Regular_Clients].[total_spent] AS [total_spent]
+    FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
           </EntitySet>
           <AssociationSet Name="FK__Employees__email__3D5E1FD2" Association="Self.FK__Employees__email__3D5E1FD2">
             <End Role="Post" EntitySet="Post" />
@@ -260,8 +294,13 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
             <End Role="Employees" EntitySet="Employees" />
             <End Role="Reservation" EntitySet="Reservation" />
           </AssociationSet>
+          <AssociationSet Name="FK__WorkSched__id_em__02FC7413" Association="Self.FK__WorkSched__id_em__02FC7413">
+            <End Role="Employees" EntitySet="Employees" />
+            <End Role="WorkSchedule" EntitySet="WorkSchedule" />
+          </AssociationSet>
         </EntityContainer>
-      </Schema></edmx:StorageModels>
+      </Schema>
+    </edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="cafe_barModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
@@ -269,10 +308,10 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
           <Key>
             <PropertyRef Name="id" />
           </Key>
-          <Property Name="id" Type="Int32" Nullable="false" />
-          <Property Name="Login" Type="String" MaxLength="128" FixedLength="false" Unicode="false" />
-          <Property Name="PasswordHash" Type="String" Nullable="false" MaxLength="128" FixedLength="false" Unicode="true" />
-          <Property Name="Salt" Type="String" Nullable="false" MaxLength="128" FixedLength="false" Unicode="true" />
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Login" Type="String" MaxLength="128" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="PasswordHash" Type="String" MaxLength="128" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Salt" Type="String" MaxLength="128" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="accessLevel" Type="Byte" Nullable="false" />
         </EntityType>
         <EntityType Name="CategoriesMenu">
@@ -303,10 +342,11 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
           <Property Name="ph_number_emp" Type="String" MaxLength="11" FixedLength="false" Unicode="false" Nullable="false" />
           <Property Name="post_emp_fk" Type="Int32" Nullable="false" />
           <Property Name="email" Type="String" MaxLength="100" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="photo_data" Type="Binary" MaxLength="Max" FixedLength="false" />
           <NavigationProperty Name="Post" Relationship="Self.FK__Employees__email__3D5E1FD2" FromRole="Employees" ToRole="Post" />
           <NavigationProperty Name="Orders" Relationship="Self.FK__Orders__id_emp_f__4F7CD00D" FromRole="Employees" ToRole="Orders" />
           <NavigationProperty Name="Reservation" Relationship="Self.FK__Reservati__id_em__46E78A0C" FromRole="Employees" ToRole="Reservation" />
-          <Property Name="photo_data" Type="Binary" MaxLength="Max" FixedLength="false" />
+          <NavigationProperty Name="WorkSchedule" Relationship="Self.FK__WorkSched__id_em__02FC7413" FromRole="Employees" ToRole="WorkSchedule" />
         </EntityType>
         <EntityType Name="Menu">
           <Key>
@@ -365,6 +405,27 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
           <Property Name="guests_count" Type="Byte" Nullable="false" />
           <NavigationProperty Name="Clients" Relationship="Self.FK__Reservati__id_cl__45F365D3" FromRole="Reservation" ToRole="Clients" />
           <NavigationProperty Name="Employees" Relationship="Self.FK__Reservati__id_em__46E78A0C" FromRole="Reservation" ToRole="Employees" />
+        </EntityType>
+        <EntityType Name="sysdiagrams">
+          <Key>
+            <PropertyRef Name="diagram_id" />
+          </Key>
+          <Property Name="name" Type="String" MaxLength="128" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="principal_id" Type="Int32" Nullable="false" />
+          <Property Name="diagram_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="version" Type="Int32" />
+          <Property Name="definition" Type="Binary" MaxLength="Max" FixedLength="false" />
+        </EntityType>
+        <EntityType Name="WorkSchedule">
+          <Key>
+            <PropertyRef Name="id_schedule" />
+          </Key>
+          <Property Name="id_schedule" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="id_employee_fk" Type="Int32" Nullable="false" />
+          <Property Name="work_date" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="start_time" Type="Time" Nullable="false" Precision="7" />
+          <Property Name="end_time" Type="Time" Nullable="false" Precision="7" />
+          <NavigationProperty Name="Employees" Relationship="Self.FK__WorkSched__id_em__02FC7413" FromRole="WorkSchedule" ToRole="Employees" />
         </EntityType>
         <EntityType Name="Regular_Clients">
           <Key>
@@ -459,6 +520,18 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="FK__WorkSched__id_em__02FC7413">
+          <End Role="Employees" Type="Self.Employees" Multiplicity="1" />
+          <End Role="WorkSchedule" Type="Self.WorkSchedule" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Employees">
+              <PropertyRef Name="id_employee" />
+            </Principal>
+            <Dependent Role="WorkSchedule">
+              <PropertyRef Name="id_employee_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <Association Name="FK__Order_det__id_me__5441852A">
           <End Role="Menu" Type="Self.Menu" Multiplicity="1" />
           <End Role="Order_details" Type="Self.Order_details" Multiplicity="*" />
@@ -483,7 +556,7 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <EntityContainer Name="cafe_barEntities1" annotation:LazyLoadingEnabled="true">
+        <EntityContainer Name="cafe_barEntities" annotation:LazyLoadingEnabled="true">
           <EntitySet Name="Autorization" EntityType="Self.Autorization" />
           <EntitySet Name="CategoriesMenu" EntityType="Self.CategoriesMenu" />
           <EntitySet Name="Clients" EntityType="Self.Clients" />
@@ -493,6 +566,8 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
           <EntitySet Name="Orders" EntityType="Self.Orders" />
           <EntitySet Name="Post" EntityType="Self.Post" />
           <EntitySet Name="Reservation" EntityType="Self.Reservation" />
+          <EntitySet Name="sysdiagrams" EntityType="Self.sysdiagrams" />
+          <EntitySet Name="WorkSchedule" EntityType="Self.WorkSchedule" />
           <EntitySet Name="Regular_Clients" EntityType="Self.Regular_Clients" />
           <AssociationSet Name="FK__Menu__id_categor__4BAC3F29" Association="Self.FK__Menu__id_categor__4BAC3F29">
             <End Role="CategoriesMenu" EntitySet="CategoriesMenu" />
@@ -522,6 +597,10 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
             <End Role="Employees" EntitySet="Employees" />
             <End Role="Reservation" EntitySet="Reservation" />
           </AssociationSet>
+          <AssociationSet Name="FK__WorkSched__id_em__02FC7413" Association="Self.FK__WorkSched__id_em__02FC7413">
+            <End Role="Employees" EntitySet="Employees" />
+            <End Role="WorkSchedule" EntitySet="WorkSchedule" />
+          </AssociationSet>
           <AssociationSet Name="FK__Order_det__id_me__5441852A" Association="Self.FK__Order_det__id_me__5441852A">
             <End Role="Menu" EntitySet="Menu" />
             <End Role="Order_details" EntitySet="Order_details" />
@@ -536,15 +615,15 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
     <!-- C-S mapping content -->
     <edmx:Mappings>
       <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
-        <EntityContainerMapping StorageEntityContainer="Хранилище cafe_barModelContainer" CdmEntityContainer="cafe_barEntities1">
+        <EntityContainerMapping StorageEntityContainer="Хранилище cafe_barModelContainer" CdmEntityContainer="cafe_barEntities">
           <EntitySetMapping Name="Autorization">
             <EntityTypeMapping TypeName="cafe_barModel.Autorization">
               <MappingFragment StoreEntitySet="Autorization">
-                <ScalarProperty Name="accessLevel" ColumnName="accessLevel" />
-                <ScalarProperty Name="Salt" ColumnName="Salt" />
-                <ScalarProperty Name="PasswordHash" ColumnName="PasswordHash" />
                 <ScalarProperty Name="id" ColumnName="id" />
                 <ScalarProperty Name="Login" ColumnName="Login" />
+                <ScalarProperty Name="PasswordHash" ColumnName="PasswordHash" />
+                <ScalarProperty Name="Salt" ColumnName="Salt" />
+                <ScalarProperty Name="accessLevel" ColumnName="accessLevel" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
@@ -568,12 +647,12 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
           <EntitySetMapping Name="Employees">
             <EntityTypeMapping TypeName="cafe_barModel.Employees">
               <MappingFragment StoreEntitySet="Employees">
-                <ScalarProperty Name="photo_data" ColumnName="photo_data" />
                 <ScalarProperty Name="id_employee" ColumnName="id_employee" />
                 <ScalarProperty Name="name_employee" ColumnName="name_employee" />
                 <ScalarProperty Name="ph_number_emp" ColumnName="ph_number_emp" />
                 <ScalarProperty Name="post_emp_fk" ColumnName="post_emp_fk" />
                 <ScalarProperty Name="email" ColumnName="email" />
+                <ScalarProperty Name="photo_data" ColumnName="photo_data" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
@@ -630,6 +709,28 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
+          <EntitySetMapping Name="sysdiagrams">
+            <EntityTypeMapping TypeName="cafe_barModel.sysdiagrams">
+              <MappingFragment StoreEntitySet="sysdiagrams">
+                <ScalarProperty Name="name" ColumnName="name" />
+                <ScalarProperty Name="principal_id" ColumnName="principal_id" />
+                <ScalarProperty Name="diagram_id" ColumnName="diagram_id" />
+                <ScalarProperty Name="version" ColumnName="version" />
+                <ScalarProperty Name="definition" ColumnName="definition" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="WorkSchedule">
+            <EntityTypeMapping TypeName="cafe_barModel.WorkSchedule">
+              <MappingFragment StoreEntitySet="WorkSchedule">
+                <ScalarProperty Name="id_schedule" ColumnName="id_schedule" />
+                <ScalarProperty Name="id_employee_fk" ColumnName="id_employee_fk" />
+                <ScalarProperty Name="work_date" ColumnName="work_date" />
+                <ScalarProperty Name="start_time" ColumnName="start_time" />
+                <ScalarProperty Name="end_time" ColumnName="end_time" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
           <EntitySetMapping Name="Regular_Clients">
             <EntityTypeMapping TypeName="cafe_barModel.Regular_Clients">
               <MappingFragment StoreEntitySet="Regular_Clients">
@@ -655,7 +756,7 @@ FROM [dbo].[Regular_Clients] AS [Regular_Clients]</DefiningQuery>
         <DesignerProperty Name="ValidateOnBuild" Value="true" />
         <DesignerProperty Name="EnablePluralization" Value="false" />
         <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
-        <DesignerProperty Name="UseLegacyProvider" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
         <DesignerProperty Name="CodeGenerationStrategy" Value="Нет" />
       </DesignerInfoPropertySet>
     </Options>

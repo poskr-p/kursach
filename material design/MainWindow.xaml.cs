@@ -14,12 +14,12 @@ namespace material_design
 {
     public partial class MainWindow : Window
     {
-        private cafe_barEntities1 db;
+        private cafe_barEntities db;
 
         public MainWindow()
         {
             InitializeComponent();
-            db = new cafe_barEntities1();
+            db = new cafe_barEntities();
             LoadData();
         }
 
@@ -50,14 +50,14 @@ namespace material_design
 
 
 
-        private void OpenEditEmployeeWindow(Employees employee = null)
-        {
-            var editWindow = new EditEmployeeWindow(employee);
-            if (editWindow.ShowDialog() == true)
-            {
-                LoadData(); // Перезагружаем данные после сохранения
-            }
-        }
+        //private void OpenEditEmployeeWindow(Employees employee = null)
+        //{
+        //    var editWindow = new EditEmployeeWindow(employee);
+        //    if (editWindow.ShowDialog() == true)
+        //    {
+        //        LoadData(); // Перезагружаем данные после сохранения
+        //    }
+        //}
 
 
 
@@ -364,27 +364,27 @@ namespace material_design
             imgEmployee.Source = null;
         }
 
-        private void dgProduct_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (dgProduct.SelectedItem != null)
-            {
-                try
-                {
-                    dynamic selectedItem = dgProduct.SelectedItem;
-                    int id = selectedItem.id_employee;
-                    var employee = db.Employees.Find(id);
+        //private void dgProduct_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        //{
+        //    if (dgProduct.SelectedItem != null)
+        //    {
+        //        try
+        //        {
+        //            dynamic selectedItem = dgProduct.SelectedItem;
+        //            int id = selectedItem.id_employee;
+        //            var employee = db.Employees.Find(id);
 
-                    if (employee != null)
-                    {
-                        OpenEditEmployeeWindow(employee);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка: {ex.Message}");
-                }
-            }
-        }
+        //            if (employee != null)
+        //            {
+        //                OpenEditEmployeeWindow(employee);
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            MessageBox.Show($"Ошибка: {ex.Message}");
+        //        }
+        //    }
+        //}
 
       
 

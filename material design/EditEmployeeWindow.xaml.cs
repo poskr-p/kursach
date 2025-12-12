@@ -6,13 +6,13 @@ namespace material_design
 {
     public partial class EditEmployeeWindow : Window
     {
-        private cafe_barEntities1 _db;
+        private cafe_barEntities _db;
         private Employees _employee;
 
         public EditEmployeeWindow(Employees employee = null)
         {
             InitializeComponent();
-            _db = new cafe_barEntities1();
+            _db = new cafe_barEntities();
             _employee = employee ?? new Employees();
 
             // Загружаем должности в ComboBox

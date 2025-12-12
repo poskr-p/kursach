@@ -7,13 +7,13 @@ namespace material_design
 {
     public partial class ReservationManagementWindow : Window
     {
-        private cafe_barEntities1 db;
+        private cafe_barEntities db;
         private Reservation currentReservation;
 
         public ReservationManagementWindow()
         {
             InitializeComponent();
-            db = new cafe_barEntities1();
+            db = new cafe_barEntities();
             InitializeData();
             LoadReservations();
         }
