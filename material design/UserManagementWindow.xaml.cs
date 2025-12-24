@@ -15,8 +15,16 @@ namespace material_design
         public UserManagementWindow()
         {
             InitializeComponent();
+            if (!App.UserContext.IsAuthenticated)
+            {
+                MessageBox.Show("Требуется авторизация");
+                var authWindow = new autorization();
+                authWindow.Show();
+                this.Close();
+                return;
+            }
             db = new cafe_barEntities();
-            db.Autorization.Load(); // Загружаем данные
+            db.Autorization.Load(); 
             LoadData();
         }
 
@@ -24,10 +32,8 @@ namespace material_design
         {
             try
             {
-                // Создаем список для DataGrid
                 var users = db.Autorization.Local.ToList();
 
-                // Добавляем RoleName для отображения
                 foreach (var user in users)
                 {
                     user.RoleName = AccessControl.GetRoleName(user.accessLevel);
@@ -35,10 +41,8 @@ namespace material_design
 
                 dgUsers.ItemsSource = users;
 
-                // Загружаем уровни доступа в ComboBox
                 LoadAccessLevels();
 
-                // Очищаем форму
                 ClearForm();
             }
             catch (Exception ex)
@@ -76,7 +80,7 @@ namespace material_design
                     return;
                 }
 
-                if (currentUser == null) // Добавление нового пользователя
+                if (currentUser == null) 
                 {
                     if (string.IsNullOrEmpty(password) || password.Length < 4)
                     {
@@ -92,7 +96,6 @@ namespace material_design
                         return;
                     }
 
-                    // Проверяем, существует ли логин
                     if (db.Autorization.Any(u => u.Login == login))
                     {
                         MessageBox.Show("Пользователь с таким логином уже существует!",
@@ -102,7 +105,6 @@ namespace material_design
 
                     byte accessLevel = (byte)cbAccessLevel.SelectedValue;
 
-                    // Генерируем хеш и соль
                     var (hash, salt) = PasswordHelper.GenerateHash(password);
 
                     var newUser = new Autorization
@@ -120,9 +122,8 @@ namespace material_design
                     MessageBox.Show($"Пользователь '{login}' успешно добавлен!",
                         "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-                else // Редактирование существующего пользователя
+                else 
                 {
-                    // Проверяем, не меняется ли логин на уже существующий
                     if (currentUser.Login != login &&
                         db.Autorization.Any(u => u.Login == login && u.id != currentUser.id))
                     {
@@ -202,7 +203,6 @@ namespace material_design
 
             try
             {
-                // Проверяем, не удаляем ли мы последнего администратора
                 if (currentUser.accessLevel == 5)
                 {
                     int adminCount = db.Autorization.Count(u => u.accessLevel == 5);
@@ -254,7 +254,6 @@ namespace material_design
                 currentUser = user;
                 txtLogin.Text = user.Login;
 
-                // Устанавливаем выбранный уровень доступа
                 foreach (KeyValuePair<byte, string> item in cbAccessLevel.Items)
                 {
                     if (item.Key == user.accessLevel)
@@ -264,16 +263,28 @@ namespace material_design
                     }
                 }
 
-                txtPassword.Password = ""; // Не показываем пароль
+                txtPassword.Password = ""; 
             }
         }
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            // Вернуться в главное меню
-            var mainDashboard = new MainDashboard();
-            mainDashboard.Show();
+            if (App.UserContext.IsAuthenticated)
+            {
+                var mainDashboard = new MainDashboard(
+                    App.UserContext.UserName,
+                    App.UserContext.UserRole,
+                    App.UserContext.AccessLevel);
+                mainDashboard.Show();
+            }
+            else
+            {
+                var authWindow = new autorization();
+                authWindow.Show();
+            }
+
             this.Close();
         }
     }
+    
 }

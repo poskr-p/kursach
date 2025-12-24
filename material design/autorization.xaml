@@ -41,11 +41,9 @@
                     Background="#FF3F51B5" Foreground="White"/>
 
             <Button Content="Отмена"
+                    Click="RegisterButton_Click"
                     Width="120" Height="30"
                     Background="LightGray"/>
-            <Button Content="registr" Width="  100" Margin="24" Background="AliceBlue" Click="Button_Click11"></Button>
         </StackPanel>
-
-        
     </Grid>
 </Window>

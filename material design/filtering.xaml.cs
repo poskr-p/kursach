@@ -16,12 +16,20 @@ namespace material_design
             try
             {
                 InitializeComponent();
+
+                if (!App.UserContext.IsAuthenticated)
+                {
+                    MessageBox.Show("Требуется авторизация");
+                    var authWindow = new autorization();
+                    authWindow.Show();
+                    this.Close();
+                    return;
+                }
+
                 db = new cafe_barEntities();
 
-                // Устанавливаем начальный выбор
                 cbDataType.SelectedIndex = 0;
 
-                // Инициализация подсказки
                 tbSearch.Text = "Поиск по имени";
                 tbSearch.Foreground = Brushes.Gray;
             }
@@ -74,12 +82,10 @@ namespace material_design
             var result = query.ToList();
             dgData.ItemsSource = result;
 
-            // Настройка ComboBox для фильтрации
             cbFilter.ItemsSource = result;
             cbFilter.DisplayMemberPath = "name_employee";
             cbFilter.SelectedValuePath = "id_employee";
 
-            // Настройка колонок DataGrid с русскими названиями
             dgData.Columns.Clear();
             dgData.Columns.Add(new DataGridTextColumn
             {
@@ -120,12 +126,10 @@ namespace material_design
             var result = query.ToList();
             dgData.ItemsSource = result;
 
-            // Настройка ComboBox для фильтрации
             cbFilter.ItemsSource = result;
             cbFilter.DisplayMemberPath = "name_client";
             cbFilter.SelectedValuePath = "id_client";
 
-            // Настройка колонок DataGrid с русскими названиями
             dgData.Columns.Clear();
             dgData.Columns.Add(new DataGridTextColumn
             {
@@ -257,8 +261,6 @@ namespace material_design
             }
         }
 
-        
-
         private void SearchBox_GotFocus(object sender, RoutedEventArgs e)
         {
             var textBox = sender as TextBox;
@@ -278,10 +280,23 @@ namespace material_design
                 textBox.Foreground = Brushes.Gray;
             }
         }
+
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            var mainDashboard = new MainDashboard();
-            mainDashboard.Show();
+            if (App.UserContext.IsAuthenticated)
+            {
+                var mainDashboard = new MainDashboard(
+                    App.UserContext.UserName,
+                    App.UserContext.UserRole,
+                    App.UserContext.AccessLevel);
+                mainDashboard.Show();
+            }
+            else
+            {
+                var authWindow = new autorization();
+                authWindow.Show();
+            }
+
             this.Close();
         }
     }

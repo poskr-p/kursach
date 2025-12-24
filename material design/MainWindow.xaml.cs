@@ -1,7 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Data.Entity;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -19,6 +18,16 @@ namespace material_design
         public MainWindow()
         {
             InitializeComponent();
+
+            if (!App.UserContext.IsAuthenticated)
+            {
+                MessageBox.Show("Требуется авторизация");
+                var authWindow = new autorization();
+                authWindow.Show();
+                this.Close();
+                return;
+            }
+
             db = new cafe_barEntities();
             LoadData();
         }
@@ -48,29 +57,41 @@ namespace material_design
             }
         }
 
+        private void dgProduct_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (dgProduct.SelectedItem != null)
+            {
+                try
+                {
+                    dynamic selectedItem = dgProduct.SelectedItem;
 
+                    tbId.Text = selectedItem.id_employee.ToString();
+                    tbName.Text = selectedItem.name_employee;
+                    tbNumber.Text = selectedItem.ph_number_emp;
+                    tbpost.Text = selectedItem.post_emp_fk.ToString();
+                    tbEmail.Text = selectedItem.email;
 
-        //private void OpenEditEmployeeWindow(Employees employee = null)
-        //{
-        //    var editWindow = new EditEmployeeWindow(employee);
-        //    if (editWindow.ShowDialog() == true)
-        //    {
-        //        LoadData(); // Перезагружаем данные после сохранения
-        //    }
-        //}
+                    if (selectedItem.photo_data != null && selectedItem.photo_data is byte[])
+                    {
+                        byte[] photoData = selectedItem.photo_data; 
+                        DisplayImage(photoData);
+                    }
+                    else
+                    {
+                        imgEmployee.Source = null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка загрузки данных сотрудника: {ex.Message}");
+                }
+            }
+        }
 
-
-
-        //private void Button_Click(object sender, RoutedEventArgs e)
-        //{
-        //    OpenEditEmployeeWindow();
-        //}
-
-        private void Button_Click(object sender, RoutedEventArgs e) // Добавление
+        private void Button_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                //Получаем данные изображения, если оно было загружено
                 byte[] photoData = null;
                 if (imgEmployee.Source != null && imgEmployee.Source is BitmapImage bitmapImage)
                 {
@@ -106,8 +127,6 @@ namespace material_design
             }
         }
 
-
-
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             try
@@ -142,38 +161,6 @@ namespace material_design
                 MessageBox.Show($"Ошибка удаления: {ex.Message}");
             }
         }
-
-
-
-
-        //private void Button_Click_1(object sender, RoutedEventArgs e)
-        //{
-        //    try
-        //    {
-        //        var employee = db.Employees.Find(Convert.ToInt32(tbId.Text));
-        //        if (employee != null)
-        //        {
-        //            var result = MessageBox.Show("Вы уверены, что хотите удалить этого сотрудника?", "Подтверждение удаления",
-        //                                      MessageBoxButton.YesNo, MessageBoxImage.Question);
-        //            if (result == MessageBoxResult.Yes)
-        //            {
-        //                db.Employees.Remove(employee);
-        //                db.SaveChanges();
-        //                LoadData();
-        //                ClearFields();
-        //                MessageBox.Show("Данные успешно удалены", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-        //            }
-        //        }
-        //        else
-        //        {
-        //            MessageBox.Show("Сотрудник с указанным ID не найден", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show($"Ошибка удаления: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-        //    }
-        //}
 
         private void ImportFromFile()
         {
@@ -219,7 +206,6 @@ namespace material_design
             {
                 var lines = File.ReadAllLines(filePath, Encoding.UTF8);
 
-                
                 foreach (string line in lines.Skip(1))
                 {
                     var values = line.Split(',');
@@ -282,7 +268,6 @@ namespace material_design
             }
         }
 
-
         private void BackupDatabase()
         {
             try
@@ -298,14 +283,12 @@ namespace material_design
                     $"cafe_bar_backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak"
                 );
 
-                // SQL-запрос для создания резервной копии
                 string backupQuery = $@"
             BACKUP DATABASE [cafe_bar] 
             TO DISK = '{backupFile}' 
             WITH FORMAT, COMPRESSION;
         ";
 
-                // Выполнение команды
                 db.Database.ExecuteSqlCommand(TransactionalBehavior.DoNotEnsureTransaction, backupQuery);
 
                 MessageBox.Show($"Резервная копия создана:\n{backupFile}", "Успех");
@@ -333,7 +316,6 @@ namespace material_design
                 {
                     string backupFile = openFileDialog.FileName;
 
-                    // SQL-запрос для восстановления
                     string restoreQuery = $@"
                 USE [master];
                 ALTER DATABASE [cafe_bar] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -353,7 +335,6 @@ namespace material_design
             }
         }
 
-
         private void ClearFields()
         {
             tbId.Text = "";
@@ -363,30 +344,6 @@ namespace material_design
             tbEmail.Text = "";
             imgEmployee.Source = null;
         }
-
-        //private void dgProduct_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        //{
-        //    if (dgProduct.SelectedItem != null)
-        //    {
-        //        try
-        //        {
-        //            dynamic selectedItem = dgProduct.SelectedItem;
-        //            int id = selectedItem.id_employee;
-        //            var employee = db.Employees.Find(id);
-
-        //            if (employee != null)
-        //            {
-        //                OpenEditEmployeeWindow(employee);
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            MessageBox.Show($"Ошибка: {ex.Message}");
-        //        }
-        //    }
-        //}
-
-      
 
         private void BackupButton_Click(object sender, RoutedEventArgs e)
         {
@@ -414,7 +371,6 @@ namespace material_design
             ExportToCsv();
         }
 
-
         private void SelectPhoto_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -427,10 +383,7 @@ namespace material_design
             {
                 try
                 {
-                    // Чтение файла в массив байтов
                     byte[] imageData = File.ReadAllBytes(openFileDialog.FileName);
-
-                    // Отображение изображения в интерфейсе
                     DisplayImage(imageData);
                 }
                 catch (Exception ex)
@@ -468,10 +421,23 @@ namespace material_design
                               MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            var mainDashboard = new MainDashboard();
-            mainDashboard.Show();
+            if (App.UserContext.IsAuthenticated)
+            {
+                var mainDashboard = new MainDashboard(
+                    App.UserContext.UserName,
+                    App.UserContext.UserRole,
+                    App.UserContext.AccessLevel);
+                mainDashboard.Show();
+            }
+            else
+            {
+                var authWindow = new autorization();
+                authWindow.Show();
+            }
+
             this.Close();
         }
     }

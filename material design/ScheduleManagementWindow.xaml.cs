@@ -26,6 +26,14 @@ namespace material_design
         public ScheduleManagementWindow()
         {
             InitializeComponent();
+            if (!App.UserContext.IsAuthenticated)
+            {
+                MessageBox.Show("Требуется авторизация");
+                var authWindow = new autorization();
+                authWindow.Show();
+                this.Close();
+                return;
+            }
             db = new cafe_barEntities();
             InitializeData();
             currentWeekStart = GetStartOfWeek(DateTime.Today);
@@ -35,7 +43,6 @@ namespace material_design
 
         private void InitializeData()
         {
-            // Загрузка сотрудников (только официанты и бармены для графика)
             var employees = db.Employees
                 .Where(e => e.Post.title_post == "Официант" || e.Post.title_post == "Бармен")
                 .ToList();
@@ -43,7 +50,6 @@ namespace material_design
             cbEmployee.DisplayMemberPath = "name_employee";
             cbEmployee.SelectedValuePath = "id_employee";
 
-            // Установка текущей даты
             dpWorkDate.SelectedDate = DateTime.Today;
             cbStartTime.SelectedIndex = 4; // 12:00 по умолчанию
             cbEndTime.SelectedIndex = 6;   // 20:00 по умолчанию
@@ -79,12 +85,10 @@ namespace material_design
                     EmployeeName = employee.name_employee
                 };
 
-                // Для каждого дня недели определяем смену
                 for (int i = 0; i < 7; i++)
                 {
                     DateTime day = currentWeekStart.AddDays(i);
-                    // В реальной системе здесь была бы загрузка из таблицы WorkSchedule
-                    // Пока используем заглушку
+                    
                     string shift = GetShiftForEmployee(employee.id_employee, day);
 
                     switch (i)
@@ -107,10 +111,9 @@ namespace material_design
 
         private string GetShiftForEmployee(int employeeId, DateTime date)
         {
-            // В реальной системе здесь загрузка из базы данных
-            // Пока возвращаем заглушку
+            
             var random = new Random(employeeId + date.DayOfYear);
-            if (random.Next(0, 100) > 70) // 30% вероятность смены
+            if (random.Next(0, 100) > 70) 
             {
                 string[] shifts = { "08:00-16:00", "12:00-20:00", "16:00-00:00" };
                 return shifts[random.Next(0, shifts.Length)];
@@ -143,12 +146,10 @@ namespace material_design
                     return;
                 }
 
-                // В реальной системе здесь сохранение в базу данных
                 MessageBox.Show($"Смена добавлена для сотрудника {cbEmployee.Text}\n" +
                               $"Дата: {dpWorkDate.SelectedDate.Value:dd.MM.yyyy}\n" +
                               $"Время: {startTime}-{endTime}");
 
-                // Обновляем отображение
                 LoadSchedule();
                 ClearForm();
             }
@@ -196,8 +197,7 @@ namespace material_design
         {
             try
             {
-                MessageBox.Show("Экспорт в Excel - функция в разработке");
-                // Реализация экспорта в Excel
+                MessageBox.Show(" функция в разработке");
             }
             catch (Exception ex)
             {
@@ -207,7 +207,20 @@ namespace material_design
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            new MainDashboard().Show();
+            if (App.UserContext.IsAuthenticated)
+            {
+                var mainDashboard = new MainDashboard(
+                    App.UserContext.UserName,
+                    App.UserContext.UserRole,
+                    App.UserContext.AccessLevel);
+                mainDashboard.Show();
+            }
+            else
+            {
+                var authWindow = new autorization();
+                authWindow.Show();
+            }
+
             this.Close();
         }
     }

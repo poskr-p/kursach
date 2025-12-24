@@ -1,8 +1,8 @@
-﻿using material_design;
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace material_design
 {
@@ -14,6 +14,18 @@ namespace material_design
         {
             InitializeComponent();
             db = new cafe_barEntities();
+
+            if (tBL != null)
+            {
+                tBL.Text = "Логин";
+                tBL.Foreground = Brushes.Gray;
+            }
+
+            if (tBP != null)
+            {
+                tBP.Password = "Пароль";
+                
+            }
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -23,9 +35,17 @@ namespace material_design
                 string login = tBL.Text.Trim();
                 string password = tBP.Password;
 
-                if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password))
+                if (login == "Логин" || string.IsNullOrEmpty(login))
                 {
-                    MessageBox.Show("Введите логин и пароль!");
+                    MessageBox.Show("Введите логин!", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (password == "Пароль" || string.IsNullOrEmpty(password))
+                {
+                    MessageBox.Show("Введите пароль!", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -33,7 +53,8 @@ namespace material_design
 
                 if (user == null)
                 {
-                    MessageBox.Show("Пользователь не найден!");
+                    MessageBox.Show("Пользователь не найден!", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -44,80 +65,79 @@ namespace material_design
                     int accessLevel = user.accessLevel;
                     string roleName = AccessControl.GetRoleName(accessLevel);
 
-                    // Устанавливаем текущего пользователя
-                    Appp.SetCurrentUser(user);
+                    App.UserContext.SetUser(login, roleName, accessLevel);
 
-                    new MainDashboard(login, roleName, accessLevel).Show();
+                    MainDashboard mainDashboard = new MainDashboard(login, roleName, accessLevel);
+                    mainDashboard.Show();
                     this.Close();
                 }
                 else
                 {
-                    MessageBox.Show("Неверный пароль!");
+                    MessageBox.Show("Неверный пароль!", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка авторизации: {ex.Message}");
+                MessageBox.Show($"Ошибка авторизации: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
-        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+
+        private void RegisterButton_Click(object sender, RoutedEventArgs e)
         {
-            var textBox = sender as TextBox;
-            if (textBox != null && textBox.Text == textBox.Tag?.ToString())
-            {
-                textBox.Text = "";
-                textBox.Foreground = System.Windows.Media.Brushes.Black;
-            }
+            var registrationWindow = new RegistrationWindow();
+            registrationWindow.Show();
+            this.Close();
         }
 
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            var textBox = sender as TextBox;
-            if (textBox != null && string.IsNullOrWhiteSpace(textBox.Text))
+            if (sender is TextBox textBox)
             {
-                textBox.Text = textBox.Tag?.ToString();
-                textBox.Foreground = System.Windows.Media.Brushes.Gray;
+                if (string.IsNullOrWhiteSpace(textBox.Text))
+                {
+                    if (textBox.Name == "tBL")
+                    {
+                        textBox.Text = "Логин";
+                        textBox.Foreground = Brushes.Gray;
+                    }
+                }
+            }
+        }
+
+        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                if (textBox.Text == "Логин")
+                {
+                    textBox.Text = "";
+                    textBox.Foreground = Brushes.Black;
+                }
             }
         }
 
         private void PasswordBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            var passwordBox = sender as PasswordBox;
-            if (passwordBox != null && passwordBox.Password == passwordBox.Tag?.ToString())
+            if (sender is PasswordBox passwordBox)
             {
-                passwordBox.Password = "";
-                passwordBox.Foreground = System.Windows.Media.Brushes.Black;
+                if (passwordBox.Password == "Пароль")
+                {
+                    passwordBox.Password = "";
+                   
+                }
             }
         }
 
         private void PasswordBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            var passwordBox = sender as PasswordBox;
-            if (passwordBox != null && string.IsNullOrWhiteSpace(passwordBox.Password))
+            if (sender is PasswordBox passwordBox)
             {
-                passwordBox.Password = passwordBox.Tag?.ToString();
-                passwordBox.Foreground = System.Windows.Media.Brushes.Gray;
-            }
-        }
-        private void Button_Click11(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                RegistrationWindow registrationWindow = new RegistrationWindow();
-
-                // Если нужно передать данные из текущей формы
-                // registrationWindow.Owner = this;
-
-                registrationWindow.Show();
-
-                // Можно закрыть текущее окно или оставить открытым
-                // this.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка открытия формы регистрации: {ex.Message}",
-                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                if (string.IsNullOrEmpty(passwordBox.Password))
+                {
+                    passwordBox.Password = "Пароль";
+                }
             }
         }
     }

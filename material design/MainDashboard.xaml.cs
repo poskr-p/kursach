@@ -8,9 +8,9 @@ namespace material_design
 {
     public partial class MainDashboard : Window
     {
-        private string currentUserName = "Пользователь";
-        private string currentUserRole = "Гость";
-        private int currentUserAccessLevel = 0;
+        private string currentUserName;
+        private string currentUserRole;
+        private int currentUserAccessLevel;
 
         public class ModuleInfo
         {
@@ -20,18 +20,18 @@ namespace material_design
             public string Icon { get; set; }
         }
 
-        // Конструктор без параметров (для совместимости)
-        public MainDashboard()
-        {
-            InitializeComponent();
-            InitializeUserInterface();
-            LoadModules();
-        }
-
-        // Конструктор с параметрами (для авторизации)
         public MainDashboard(string userName, string userRole, int accessLevel)
         {
             InitializeComponent();
+
+            if (string.IsNullOrEmpty(userName))
+            {
+                var authWindow = new autorization();
+                authWindow.Show();
+                this.Close();
+                return;
+            }
+
             currentUserName = userName;
             currentUserRole = userRole;
             currentUserAccessLevel = accessLevel;
@@ -42,7 +42,6 @@ namespace material_design
 
         private void InitializeUserInterface()
         {
-            // Устанавливаем информацию о пользователе
             tbUserInfo.Text = $"{currentUserName} ({currentUserRole})";
             tbWelcome.Text = $"Добро пожаловать, {currentUserName}! Ваша роль: {currentUserRole}";
         }
@@ -51,39 +50,6 @@ namespace material_design
         {
             var availableModules = new List<ModuleInfo>();
 
-            // Базовые модули для всех ролей
-            if (AccessControl.CanViewTables(currentUserAccessLevel))
-            {
-                availableModules.Add(new ModuleInfo
-                {
-                    Name = "TableView",
-                    Title = "Просмотр таблиц",
-                    Description = "Просмотр всех данных системы",
-                    Icon = "📋"
-                });
-            }
-            if (AccessControl.CanManageUsers(currentUserAccessLevel))
-            {
-                availableModules.Add(new ModuleInfo
-                {
-                    Name = "UserManagement",
-                    Title = "Управление пользователями",
-                    Description = "Создание и управление учетными записями",
-                    Icon = "👤"
-                });
-            }
-            if (AccessControl.CanTakeOrders(currentUserAccessLevel))
-            {
-                availableModules.Add(new ModuleInfo
-                {
-                    Name = "OrderTaking",
-                    Title = "Прием заказов",
-                    Description = "Создание и управление заказами",
-                    Icon = "📝"
-                });
-            }
-
-            // Модули для администратора
             if (AccessControl.CanManageEmployees(currentUserAccessLevel))
             {
                 availableModules.Add(new ModuleInfo
@@ -138,16 +104,40 @@ namespace material_design
                     Icon = "📊"
                 });
             }
+
+            if (AccessControl.CanTakeOrders(currentUserAccessLevel))
+            {
+                availableModules.Add(new ModuleInfo
+                {
+                    Name = "OrderTaking",
+                    Title = "Прием заказов",
+                    Description = "Создание и управление заказами",
+                    Icon = "📝"
+                });
+            }
+
+            if (AccessControl.CanViewTables(currentUserAccessLevel))
+            {
+                availableModules.Add(new ModuleInfo
+                {
+                    Name = "TableView",
+                    Title = "Просмотр таблиц",
+                    Description = "Просмотр всех данных системы",
+                    Icon = "📋"
+                });
+            }
+
             if (AccessControl.CanManageUsers(currentUserAccessLevel))
-{
-    availableModules.Add(new ModuleInfo 
-    { 
-        Name = "UserManagement", 
-        Title = "Управление пользователями", 
-        Description = "Создание и управление учетными записями",
-        Icon = "👤" 
-    });
-}
+            {
+                availableModules.Add(new ModuleInfo
+                {
+                    Name = "UserManagement",
+                    Title = "Управление пользователями",
+                    Description = "Создание и управление учетными записями",
+                    Icon = "👤"
+                });
+            }
+
             modulesContainer.ItemsSource = availableModules;
         }
 
@@ -227,6 +217,7 @@ namespace material_design
                             this.Hide();
                         }
                         break;
+
                     case "UserManagement":
                         if (AccessControl.CanManageUsers(currentUserAccessLevel))
                         {
@@ -252,6 +243,8 @@ namespace material_design
 
             if (result == MessageBoxResult.Yes)
             {
+                App.UserContext.Clear();
+
                 var authWindow = new autorization();
                 authWindow.Show();
                 this.Close();

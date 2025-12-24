@@ -13,7 +13,6 @@ namespace material_design
             var sb = new StringBuilder();
             sb.AppendLine($"Ошибка: {ex.Message}");
 
-            // Для исключений Entity Framework Validation
             if (ex is DbEntityValidationException dbEx)
             {
                 sb.AppendLine("Ошибки валидации:");
@@ -26,32 +25,30 @@ namespace material_design
                 }
             }
 
-            // Для SqlException (ошибки БД)
             var sqlEx = ex.InnerException as System.Data.SqlClient.SqlException;
             if (sqlEx != null)
             {
                 sb.AppendLine($"Код ошибки SQL: {sqlEx.Number}");
                 sb.AppendLine($"Сообщение SQL: {sqlEx.Message}");
 
-                // Расшифровка кодов ошибок SQL Server
+                
                 switch (sqlEx.Number)
                 {
-                    case 547: // Foreign key constraint error
+                    case 547:
                         sb.AppendLine("Ошибка ограничения внешнего ключа. Проверьте существование связанных записей.");
                         break;
-                    case 2627: // Unique constraint error
+                    case 2627: 
                         sb.AppendLine("Ошибка уникальности. Такая запись уже существует.");
                         break;
-                    case 2601: // Duplicate key row error
+                    case 2601: 
                         sb.AppendLine("Дублирование ключа.");
                         break;
-                    case 515: // NULL insert error
+                    case 515:
                         sb.AppendLine("Попытка вставить NULL в обязательное поле.");
                         break;
                 }
             }
 
-            // Рекурсивно получаем все внутренние исключения
             Exception inner = ex.InnerException;
             int level = 1;
             while (inner != null)

@@ -12,7 +12,15 @@ namespace material_design
 
         public ReservationManagementWindow()
         {
-            InitializeComponent();
+            if (!App.UserContext.IsAuthenticated)
+            {
+                MessageBox.Show("Требуется авторизация");
+                var authWindow = new autorization();
+                authWindow.Show();
+                this.Close();
+                return;
+            }
+
             db = new cafe_barEntities();
             InitializeData();
             LoadReservations();
@@ -20,13 +28,11 @@ namespace material_design
 
         private void InitializeData()
         {
-            // Загрузка клиентов
             var clients = db.Clients.ToList();
             cbClient.ItemsSource = clients;
             cbClient.DisplayMemberPath = "name_client";
             cbClient.SelectedValuePath = "id_client";
 
-            // Загрузка сотрудников (только администраторы и официанты для бронирования)
             var employees = db.Employees
                 .Where(e => e.Post.title_post == "Администратор" || e.Post.title_post == "Официант")
                 .ToList();
@@ -34,7 +40,6 @@ namespace material_design
             cbEmployee.DisplayMemberPath = "name_employee";
             cbEmployee.SelectedValuePath = "id_employee";
 
-            // Установка текущей даты
             dpReservationDate.SelectedDate = DateTime.Today;
             cbReservationTime.SelectedIndex = 2; // 19:00 по умолчанию
         }
@@ -54,7 +59,6 @@ namespace material_design
         {
             try
             {
-                // Валидация данных
                 if (cbClient.SelectedValue == null)
                 {
                     MessageBox.Show("Выберите клиента!", "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -85,7 +89,6 @@ namespace material_design
                     return;
                 }
 
-                // Формируем дату и время
                 DateTime selectedDate = dpReservationDate.SelectedDate.Value;
                 if (selectedDate < DateTime.Today)
                 {
@@ -110,7 +113,6 @@ namespace material_design
                     return;
                 }
 
-                // Проверка на рабочее время (например, с 10:00 до 22:00)
                 TimeSpan time = reservationDateTime.TimeOfDay;
                 if (time < TimeSpan.FromHours(10) || time > TimeSpan.FromHours(22))
                 {
@@ -119,7 +121,6 @@ namespace material_design
                     return;
                 }
 
-                // Проверяем существование клиента и сотрудника в базе
                 int clientId = (int)cbClient.SelectedValue;
                 int employeeId = (int)cbEmployee.SelectedValue;
 
@@ -140,7 +141,6 @@ namespace material_design
 
                 if (currentReservation == null)
                 {
-                    // Добавление нового бронирования
                     var newReservation = new Reservation
                     {
                         id_client_fk = clientId,
@@ -159,14 +159,12 @@ namespace material_design
                     }
                     catch (System.Data.Entity.Infrastructure.DbUpdateException dbEx)
                     {
-                        // Обработка ошибок базы данных
                         ExceptionHelper.ShowErrorMessage(dbEx, "добавления бронирования");
                         return;
                     }
                 }
                 else
                 {
-                    // Редактирование существующего бронирования
                     currentReservation.id_client_fk = clientId;
                     currentReservation.id_employee_fk = employeeId;
                     currentReservation.reservation_date = reservationDateTime;
@@ -242,7 +240,6 @@ namespace material_design
                 dpReservationDate.SelectedDate = reservation.reservation_date;
                 txtGuestsCount.Text = reservation.guests_count.ToString();
 
-                // Устанавливаем время
                 string timeStr = reservation.reservation_date.ToString("HH:mm");
                 foreach (System.Windows.Controls.ComboBoxItem item in cbReservationTime.Items)
                 {
@@ -257,8 +254,22 @@ namespace material_design
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            new MainDashboard().Show();
+            if (App.UserContext.IsAuthenticated)
+            {
+                var mainDashboard = new MainDashboard(
+                    App.UserContext.UserName,
+                    App.UserContext.UserRole,
+                    App.UserContext.AccessLevel);
+                mainDashboard.Show();
+            }
+            else
+            {
+                var authWindow = new autorization();
+                authWindow.Show();
+            }
+
             this.Close();
         }
     }
+    
 }
