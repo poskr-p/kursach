@@ -13,6 +13,16 @@ namespace material_design
         public MenuManagementWindow()
         {
             InitializeComponent();
+
+            if (!App.UserContext.IsAuthenticated)
+            {
+                MessageBox.Show("Требуется авторизация");
+                var authWindow = new autorization();
+                authWindow.Show();
+                this.Close();
+                return;
+            }
+
             db = new cafe_barEntities();
             InitializeData();
             LoadMenuItems();
@@ -20,7 +30,6 @@ namespace material_design
 
         private void InitializeData()
         {
-            // Загрузка категорий
             var categories = db.CategoriesMenu.ToList();
             cbCategory.ItemsSource = categories;
             cbCategory.DisplayMemberPath = "title_category";
@@ -63,7 +72,6 @@ namespace material_design
 
                 if (currentMenuItem == null)
                 {
-                    // Добавление новой позиции
                     var newMenuItem = new Menu
                     {
                         item_name = itemName,
@@ -145,7 +153,20 @@ namespace material_design
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            new MainDashboard().Show();
+            if (App.UserContext.IsAuthenticated)
+            {
+                var mainDashboard = new MainDashboard(
+                    App.UserContext.UserName,
+                    App.UserContext.UserRole,
+                    App.UserContext.AccessLevel);
+                mainDashboard.Show();
+            }
+            else
+            {
+                var authWindow = new autorization();
+                authWindow.Show();
+            }
+
             this.Close();
         }
     }

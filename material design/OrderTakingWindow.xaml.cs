@@ -11,9 +11,7 @@ namespace material_design
     public partial class OrderTakingWindow : Window
     {
         private cafe_barEntities db;
-        private int currentUserAccessLevel;
         private List<OrderItem> currentOrderItems;
-        private int currentEmployeeId;
 
         public class OrderItem
         {
@@ -24,12 +22,20 @@ namespace material_design
             public decimal Subtotal => Quantity * UnitPrice;
         }
 
-        public OrderTakingWindow(int accessLevel, int employeeId = 0)
+        public OrderTakingWindow(int accessLevel)
         {
             InitializeComponent();
+
+            if (!App.UserContext.IsAuthenticated)
+            {
+                MessageBox.Show("Требуется авторизация");
+                var authWindow = new autorization();
+                authWindow.Show();
+                this.Close();
+                return;
+            }
+
             db = new cafe_barEntities();
-            currentUserAccessLevel = accessLevel;
-            currentEmployeeId = employeeId;
             currentOrderItems = new List<OrderItem>();
 
             InitializeData();
@@ -38,7 +44,6 @@ namespace material_design
 
         private void InitializeData()
         {
-            // Загрузка категорий
             var categories = db.CategoriesMenu.ToList();
             cbCategories.Items.Clear();
             cbCategories.Items.Add(new ComboBoxItem { Content = "Все категории", Tag = 0 });
@@ -53,19 +58,33 @@ namespace material_design
             }
             cbCategories.SelectedIndex = 0;
 
-            // Загрузка клиентов
             var clients = db.Clients.ToList();
             cbClients.ItemsSource = clients;
             cbClients.DisplayMemberPath = "name_client";
             cbClients.SelectedValuePath = "id_client";
 
-            // Информация о текущем пользователе
-            if (currentEmployeeId > 0)
+            var employees = db.Employees
+                .Where(e => e.Post.title_post == "Официант" || e.Post.title_post == "Бармен")
+                .ToList();
+            cbEmployees.ItemsSource = employees;
+            cbEmployees.DisplayMemberPath = "name_employee";
+            cbEmployees.SelectedValuePath = "id_employee";
+
+            if (App.UserContext.IsAuthenticated)
             {
-                var employee = db.Employees.Find(currentEmployeeId);
-                if (employee != null)
+                tbCurrentUser.Text = $"{App.UserContext.UserName} ({App.UserContext.UserRole})";
+
+                var currentUser = employees.FirstOrDefault(e =>
+                    e.name_employee.Contains(App.UserContext.UserName) ||
+                    e.email.Contains(App.UserContext.UserName));
+
+                if (currentUser != null)
                 {
-                    tbCurrentUser.Text = $"Официант: {employee.name_employee}";
+                    cbEmployees.SelectedValue = currentUser.id_employee;
+                }
+                else if (employees.Count > 0)
+                {
+                    cbEmployees.SelectedIndex = 0;
                 }
             }
         }
@@ -147,29 +166,53 @@ namespace material_design
         {
             if (cbClients.SelectedValue == null)
             {
-                MessageBox.Show("Выберите клиента!");
+                MessageBox.Show("Выберите клиента!", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                cbClients.Focus();
+                return;
+            }
+
+            if (cbEmployees.SelectedValue == null)
+            {
+                MessageBox.Show("Выберите сотрудника!", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                cbEmployees.Focus();
                 return;
             }
 
             if (currentOrderItems.Count == 0)
             {
-                MessageBox.Show("Добавьте позиции в заказ!");
-                return;
-            }
-
-            if (currentEmployeeId == 0)
-            {
-                MessageBox.Show("Ошибка: сотрудник не определен!");
+                MessageBox.Show("Добавьте позиции в заказ!", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             try
             {
-                // Создание заказа
+                int clientId = (int)cbClients.SelectedValue;
+                int employeeId = (int)cbEmployees.SelectedValue;
+
+                var clientExists = db.Clients.Any(c => c.id_client == clientId);
+                var employeeExists = db.Employees.Any(emp => emp.id_employee == employeeId); 
+
+                if (!clientExists)
+                {
+                    MessageBox.Show("Выбранный клиент не найден в базе данных!", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (!employeeExists)
+                {
+                    MessageBox.Show("Выбранный сотрудник не найден в базе данных!", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
                 var order = new Orders
                 {
-                    id_cli_fk = (int)cbClients.SelectedValue,
-                    id_emp_fk = currentEmployeeId,
+                    id_cli_fk = clientId,
+                    id_emp_fk = employeeId,
                     order_date = DateTime.Now,
                     totalAmount = currentOrderItems.Sum(item => item.Subtotal)
                 };
@@ -177,7 +220,6 @@ namespace material_design
                 db.Orders.Add(order);
                 db.SaveChanges();
 
-                // Создание деталей заказа
                 foreach (var item in currentOrderItems)
                 {
                     var orderDetail = new Order_details
@@ -192,14 +234,73 @@ namespace material_design
 
                 db.SaveChanges();
 
-                MessageBox.Show($"Заказ №{order.id_order} успешно создан на сумму {order.totalAmount:C}");
+                CheckAndAddRegularClient(clientId);
 
-                // Очистка формы
+                MessageBox.Show($"Заказ №{order.id_order} успешно создан!\n" +
+                              $"Клиент: {cbClients.Text}\n" +
+                              $"Сотрудник: {cbEmployees.Text}\n" +
+                              $"Сумма: {order.totalAmount:C}",
+                              "Успех",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Information);
+
                 ClearOrder_Click(sender, e);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка создания заказа: {ex.Message}");
+                MessageBox.Show($"Ошибка создания заказа: {ex.Message}",
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CheckAndAddRegularClient(int clientId)
+        {
+            try
+            {
+                var isRegular = db.Regular_Clients.Any(rc => rc.id_reg_client_fk == clientId);
+
+                if (!isRegular)
+                {
+                    decimal totalSpent = db.Orders
+                        .Where(o => o.id_cli_fk == clientId)
+                        .Sum(o => o.totalAmount);
+
+                    int orderCount = db.Orders
+                        .Where(o => o.id_cli_fk == clientId)
+                        .Count();
+
+                    if (orderCount >= 5 || totalSpent >= 10000)
+                    {
+                        decimal discountRate = 0;
+
+                        if (totalSpent >= 30000)
+                            discountRate = 15.00m;
+                        else if (totalSpent >= 20000)
+                            discountRate = 10.00m;
+                        else if (totalSpent >= 10000)
+                            discountRate = 5.00m;
+
+                        var regularClient = new Regular_Clients
+                        {
+                            id_reg_client_fk = clientId,
+                            discount_rate = discountRate,
+                            total_spent = totalSpent
+                        };
+
+                        db.Regular_Clients.Add(regularClient);
+                        db.SaveChanges();
+
+                        MessageBox.Show($"Клиент добавлен в программу лояльности!\n" +
+                                      $"Скидка: {discountRate}%",
+                                      "Информация",
+                                      MessageBoxButton.OK,
+                                      MessageBoxImage.Information);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка обработки лояльности: {ex.Message}");
             }
         }
 
@@ -210,7 +311,8 @@ namespace material_design
 
         private void ActiveOrders_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Просмотр активных заказов - функция в разработке");
+            MessageBox.Show("Просмотр активных заказов - функция в разработке",
+                "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void SearchBox_GotFocus(object sender, RoutedEventArgs e)
@@ -245,7 +347,20 @@ namespace material_design
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            new MainDashboard().Show();
+            if (App.UserContext.IsAuthenticated)
+            {
+                var mainDashboard = new MainDashboard(
+                    App.UserContext.UserName,
+                    App.UserContext.UserRole,
+                    App.UserContext.AccessLevel);
+                mainDashboard.Show();
+            }
+            else
+            {
+                var authWindow = new autorization();
+                authWindow.Show();
+            }
+
             this.Close();
         }
     }

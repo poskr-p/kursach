@@ -6,8 +6,20 @@ namespace material_design
     {
         protected void NavigateToMainDashboard()
         {
-            var mainDashboard = new MainDashboard();
-            mainDashboard.Show();
+            if (App.UserContext.IsAuthenticated)
+            {
+                var mainDashboard = new MainDashboard(
+                    App.UserContext.UserName,
+                    App.UserContext.UserRole,
+                    App.UserContext.AccessLevel);
+                mainDashboard.Show();
+            }
+            else
+            {
+                var authWindow = new autorization();
+                authWindow.Show();
+            }
+
             this.Close();
         }
 

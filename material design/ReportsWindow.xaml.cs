@@ -15,7 +15,19 @@ namespace material_design
         public ReportsWindow()
         {
             InitializeComponent();
+
+            // Проверяем авторизацию
+            if (!App.UserContext.IsAuthenticated)
+            {
+                MessageBox.Show("Требуется авторизация");
+                var authWindow = new autorization();
+                authWindow.Show();
+                this.Close();
+                return;
+            }
+
             db = new cafe_barEntities();
+           
 
             // Устанавливаем даты по умолчанию
             dpStartDate.SelectedDate = DateTime.Today.AddDays(-30);
@@ -87,7 +99,6 @@ namespace material_design
 
             dgReport.ItemsSource = salesData;
 
-            // Добавляем итоги
             decimal totalRevenue = salesData.Sum(x => x.Выручка);
             int totalItems = salesData.Sum(x => x.Количество);
 
@@ -266,9 +277,22 @@ namespace material_design
 
         private void MainMenu_Click(object sender, RoutedEventArgs e)
         {
-            var mainDashboard = new MainDashboard();
-            mainDashboard.Show();
+            if (App.UserContext.IsAuthenticated)
+            {
+                var mainDashboard = new MainDashboard(
+                    App.UserContext.UserName,
+                    App.UserContext.UserRole,
+                    App.UserContext.AccessLevel);
+                mainDashboard.Show();
+            }
+            else
+            {
+                var authWindow = new autorization();
+                authWindow.Show();
+            }
+
             this.Close();
+        
         }
         private void ExportExcel_Click(object sender, RoutedEventArgs e)
         {

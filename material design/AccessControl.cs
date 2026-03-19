@@ -8,7 +8,6 @@ namespace material_design
 {
     public static class AccessControl
     {
-        // Права доступа по уровням
         public static bool CanManageEmployees(int accessLevel) => accessLevel >= 5;
         public static bool CanManageMenu(int accessLevel) => accessLevel >= 5;
         public static bool CanManageReservations(int accessLevel) => accessLevel >= 5;
@@ -18,19 +17,18 @@ namespace material_design
         public static bool CanViewTables(int accessLevel) => accessLevel >= 2;
         public static bool CanManageUsers(int accessLevel) => accessLevel >= 5;
 
-        // Названия ролей
         public static string GetRoleName(int accessLevel)
         {
             switch (accessLevel)
             {
                 case 5: return "Администратор";
+                case 4: return "Менеджер зала";
                 case 3: return "Бармен";
                 case 2: return "Официант";
-                default: return "Неизвестная роль";
+                default: throw new ArgumentException($"Неизвестный уровень доступа: {accessLevel}");
             }
         }
 
-        // Проверка доступа к конкретному модулю
         public static bool HasAccessToModule(string moduleName, int accessLevel)
         {
             switch (moduleName)
@@ -43,6 +41,7 @@ namespace material_design
                 case "Управление бронированием": return CanManageReservations(accessLevel);
                 case "Управление графиком": return CanManageSchedule(accessLevel);
                 case "Управление меню": return CanManageMenu(accessLevel);
+                case "Управление пользователями": return CanManageUsers(accessLevel);
                 default: return false;
             }
         }
