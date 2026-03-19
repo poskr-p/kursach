@@ -100,25 +100,6 @@ namespace material_design
                 passwordBox.Foreground = System.Windows.Media.Brushes.Gray;
             }
         }
-        private void Button_Click11(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                RegistrationWindow registrationWindow = new RegistrationWindow();
-
-                // Если нужно передать данные из текущей формы
-                // registrationWindow.Owner = this;
-
-                registrationWindow.Show();
-
-                // Можно закрыть текущее окно или оставить открытым
-                // this.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка открытия формы регистрации: {ex.Message}",
-                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
+        
     }
 }

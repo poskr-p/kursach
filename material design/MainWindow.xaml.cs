@@ -50,21 +50,7 @@ namespace material_design
 
 
 
-        //private void OpenEditEmployeeWindow(Employees employee = null)
-        //{
-        //    var editWindow = new EditEmployeeWindow(employee);
-        //    if (editWindow.ShowDialog() == true)
-        //    {
-        //        LoadData(); // Перезагружаем данные после сохранения
-        //    }
-        //}
-
-
-
-        //private void Button_Click(object sender, RoutedEventArgs e)
-        //{
-        //    OpenEditEmployeeWindow();
-        //}
+        
 
         private void Button_Click(object sender, RoutedEventArgs e) // Добавление
         {
