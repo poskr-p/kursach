@@ -44,6 +44,7 @@
                                 FontSize="18" FontWeight="Bold" Foreground="White"/>
                         <TextBlock Text="Кафе-бар 'Удача'"
                                 FontSize="16" Foreground="White" Opacity="0.9"/>
+
                     </StackPanel>
                 </StackPanel>
 
@@ -54,9 +55,40 @@
                     <Button Content="Выйти" Click="LogoutButton_Click"
                            Background="Transparent" BorderBrush="White" 
                            Foreground="White" Padding="10,5"/>
+
                 </StackPanel>
+                <Button x:Name="btnMenu" 
+                Content="☰ Меню" 
+                Background="Transparent" 
+                Foreground="White" 
+                BorderThickness="0"
+                Cursor="Hand"
+                FontSize="14"
+                Margin="798,-1,25,1"
+                Click="MenuButton_Click"/>
+
+                <Popup x:Name="popupMenu" 
+       PlacementTarget="{Binding ElementName=btnMenu}"
+       Placement="Bottom"
+       StaysOpen="False"
+       AllowsTransparency="True">
+                    <Border Background="White" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="4"
+            Padding="5" MinWidth="200">
+                        <StackPanel>
+                            <MenuItem Header="💾 Резервное копирование БД" Click="BackupDatabase_Click"/>
+                            <MenuItem Header="🔄 Восстановление из копии" Click="RestoreDatabase_Click"/>
+                            <Separator/>
+                            <MenuItem Header="ℹ️ О программе" Click="AboutProgram_Click"/>
+                            <Separator/>
+                            <MenuItem Header="🚪 Выход" Click="Logout_Click"/>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+
             </Grid>
+            
         </Border>
+
 
         <!-- Main Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -65,6 +97,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
+
 
                 <!-- Приветствие -->
                 <TextBlock Grid.Row="0" Name="tbWelcome" FontSize="16" Margin="0,0,0,20"

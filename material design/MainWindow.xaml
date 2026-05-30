@@ -40,7 +40,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Data Grid -->
-            <DataGrid Name="dgProduct"  AutoGenerateColumns="False">
+            <DataGrid Name="dgProduct" SelectionChanged="dgProduct_SelectionChanged" AutoGenerateColumns="False">
                 <DataGrid.Columns>
                     <DataGridTextColumn Binding="{Binding id_employee}" Header="ID" Width="Auto"/>
                     <DataGridTextColumn Binding="{Binding name_employee}" Header="Сотрудник" Width="*"/>

@@ -1,9 +1,9 @@
-﻿using Microsoft.Win32;
+﻿using material_design.DTO;
+using material_design.Repositories;
+using material_design.Services;
+using Microsoft.Win32;
 using System;
-using System.Data.Entity;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -13,22 +13,21 @@ namespace material_design
 {
     public partial class MainWindow : Window
     {
-        private cafe_barEntities db;
+        private readonly cafe_barEntities _context;
+        private readonly IEmployeeService _employeeService;
+        private Employees _currentEmployee;
+        private byte[] _currentPhotoData;
 
         public MainWindow()
         {
             InitializeComponent();
+            _context = new cafe_barEntities();
 
-            if (!App.UserContext.IsAuthenticated)
-            {
-                MessageBox.Show("Требуется авторизация");
-                var authWindow = new autorization();
-                authWindow.Show();
-                this.Close();
-                return;
-            }
+            var employeeRepo = new Repository<Employees>(_context);
+            var postRepo = new Repository<Post>(_context);
 
-            db = new cafe_barEntities();
+            _employeeService = new EmployeeService(employeeRepo, postRepo);
+
             LoadData();
         }
 
@@ -36,20 +35,8 @@ namespace material_design
         {
             try
             {
-                var query = from emp in db.Employees
-                            join post in db.Post on emp.post_emp_fk equals post.id_post
-                            select new
-                            {
-                                id_employee = emp.id_employee,
-                                name_employee = emp.name_employee,
-                                ph_number_emp = emp.ph_number_emp,
-                                post_emp_fk = emp.post_emp_fk,
-                                email = emp.email,
-                                title_post = post.title_post,
-                                photo_data = emp.photo_data
-                            };
-
-                dgProduct.ItemsSource = query.ToList();
+                var employees = _employeeService.GetAllEmployeesWithPost();
+                dgProduct.ItemsSource = employees;
             }
             catch (Exception ex)
             {
@@ -57,62 +44,41 @@ namespace material_design
             }
         }
 
-        private void dgProduct_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (dgProduct.SelectedItem != null)
-            {
-                try
-                {
-                    dynamic selectedItem = dgProduct.SelectedItem;
-
-                    tbId.Text = selectedItem.id_employee.ToString();
-                    tbName.Text = selectedItem.name_employee;
-                    tbNumber.Text = selectedItem.ph_number_emp;
-                    tbpost.Text = selectedItem.post_emp_fk.ToString();
-                    tbEmail.Text = selectedItem.email;
-
-        
-
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void Button_Click(object sender, RoutedEventArgs e) // Добавление
         {
             try
             {
-                byte[] photoData = null;
-                if (imgEmployee.Source != null && imgEmployee.Source is BitmapImage bitmapImage)
+                if (string.IsNullOrWhiteSpace(tbName.Text) ||
+                    string.IsNullOrWhiteSpace(tbNumber.Text) ||
+                    string.IsNullOrWhiteSpace(tbpost.Text) ||
+                    string.IsNullOrWhiteSpace(tbEmail.Text))
                 {
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        BitmapEncoder encoder = new PngBitmapEncoder();
-                        encoder.Frames.Add(BitmapFrame.Create(bitmapImage));
-                        encoder.Save(ms);
-                        photoData = ms.ToArray();
-                    }
+                    MessageBox.Show("Заполните все поля!");
+                    return;
                 }
 
-                db.Employees.Add(new Employees
+                var employee = new Employees
                 {
-                    id_employee = Convert.ToInt32(tbId.Text),
+                    id_employee = string.IsNullOrEmpty(tbId.Text) ? 0 : Convert.ToInt32(tbId.Text),
                     name_employee = tbName.Text,
                     ph_number_emp = tbNumber.Text,
                     post_emp_fk = Convert.ToInt32(tbpost.Text),
                     email = tbEmail.Text,
-                    photo_data = photoData
-                });
+                    photo_data = _currentPhotoData
+                };
 
-                db.SaveChanges();
+                _employeeService.AddEmployee(employee);
                 LoadData();
                 ClearFields();
-                MessageBox.Show("Данные успешно добавлены", "Успех",
-                              MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Данные успешно добавлены", "Успех");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка добавления: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка добавления: {ex.Message}");
             }
         }
 
-        private void Button_Click_1(object sender, RoutedEventArgs e)
+        private void Button_Click_1(object sender, RoutedEventArgs e) // Удаление
         {
             try
             {
@@ -124,21 +90,16 @@ namespace material_design
 
                 dynamic selectedItem = dgProduct.SelectedItem;
                 int id = selectedItem.id_employee;
-                var employee = db.Employees.Find(id);
 
-                if (employee != null)
+                var result = MessageBox.Show("Вы уверены, что хотите удалить этого сотрудника?",
+                    "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
                 {
-                    var result = MessageBox.Show("Вы уверены, что хотите удалить этого сотрудника?",
-                        "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-                    if (result == MessageBoxResult.Yes)
-                    {
-                        db.Employees.Remove(employee);
-                        db.SaveChanges();
-                        LoadData();
-                        ClearFields();
-                        MessageBox.Show("Сотрудник успешно удален");
-                    }
+                    _employeeService.DeleteEmployee(id);
+                    LoadData();
+                    ClearFields();
+                    MessageBox.Show("Сотрудник успешно удален");
                 }
             }
             catch (Exception ex)
@@ -147,81 +108,60 @@ namespace material_design
             }
         }
 
-        private void ImportFromFile()
+        private void dgProduct_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (dgProduct.SelectedItem != null)
+            {
+                dynamic selected = dgProduct.SelectedItem;
+                tbId.Text = selected.id_employee.ToString();
+                tbName.Text = selected.name_employee;
+                tbNumber.Text = selected.ph_number_emp;
+                tbpost.Text = selected.post_emp_fk.ToString();
+                tbEmail.Text = selected.email;
+
+                if (selected.photo_data != null)
+                {
+                    _currentPhotoData = selected.photo_data;
+                    DisplayImage(_currentPhotoData);
+                }
+            }
+        }
+
+        private void ClearFields()
+        {
+            tbId.Text = "";
+            tbName.Text = "";
+            tbNumber.Text = "";
+            tbpost.Text = "";
+            tbEmail.Text = "";
+            imgEmployee.Source = null;
+            _currentPhotoData = null;
+        }
+
+        private void ImportButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 OpenFileDialog openFileDialog = new OpenFileDialog
                 {
-                    Filter = "CSV files (*.csv)|*.csv|Excel files (*.xls;*.xlsx)|*.xls;*.xlsx",
+                    Filter = "CSV files (*.csv)|*.csv",
                     Title = "Выберите файл для импорта"
                 };
 
                 if (openFileDialog.ShowDialog() == true)
                 {
-                    string filePath = openFileDialog.FileName;
-                    string extension = Path.GetExtension(filePath).ToLower();
-
-                    if (extension == ".csv")
-                    {
-                        ImportFromCsv(filePath);
-                    }
-                    else if (extension == ".xls" || extension == ".xlsx")
-                    {
-                        MessageBox.Show("Для импорта из Excel установите библиотеку EPPlus", "Информация",
-                                      MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Неподдерживаемый формат файла", "Ошибка",
-                                      MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    _employeeService.ImportFromCsv(openFileDialog.FileName);
+                    LoadData();
+                    MessageBox.Show("Данные импортированы", "Успех");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка импорта: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка импорта: {ex.Message}");
             }
         }
 
-        private void ImportFromCsv(string filePath)
-        {
-            try
-            {
-                var lines = File.ReadAllLines(filePath, Encoding.UTF8);
-
-                foreach (string line in lines.Skip(1))
-                {
-                    var values = line.Split(',');
-
-                    if (values.Length >= 5)
-                    {
-                        var employee = new Employees
-                        {
-                            name_employee = values[0],
-                            ph_number_emp = values[1],
-                            post_emp_fk = int.Parse(values[2]),
-                            email = values[3]
-                        };
-
-                        db.Employees.Add(employee);
-                    }
-                }
-
-                db.SaveChanges();
-                LoadData();
-                MessageBox.Show("Данные успешно импортированы из CSV", "Успех",
-                              MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка импорта CSV: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void ExportToCsv()
+        private void ExportCsvButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -241,120 +181,19 @@ namespace material_design
 
                 if (saveFileDialog.ShowDialog() == true)
                 {
-                    File.WriteAllText(saveFileDialog.FileName, csvData, Encoding.UTF8);
-                    MessageBox.Show("Данные успешно экспортированы в CSV файл", "Экспорт завершен",
-                                  MessageBoxButton.OK, MessageBoxImage.Information);
+                    File.WriteAllText(saveFileDialog.FileName, csvData, System.Text.Encoding.UTF8);
+                    MessageBox.Show("Данные успешно экспортированы в CSV файл");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при экспорте данных: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка при экспорте данных: {ex.Message}");
             }
         }
 
-        private void BackupDatabase()
-        {
-            try
-            {
-                string backupFolder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "CafeBarBackups"
-                );
-                Directory.CreateDirectory(backupFolder);
+        
 
-                string backupFile = Path.Combine(
-                    backupFolder,
-                    $"cafe_bar_backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak"
-                );
-
-                string backupQuery = $@"
-            BACKUP DATABASE [cafe_bar] 
-            TO DISK = '{backupFile}' 
-            WITH FORMAT, COMPRESSION;
-        ";
-
-                db.Database.ExecuteSqlCommand(TransactionalBehavior.DoNotEnsureTransaction, backupQuery);
-
-                MessageBox.Show($"Резервная копия создана:\n{backupFile}", "Успех");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при создании резервной копии: {ex.Message}", "Ошибка");
-            }
-        }
-
-        private void RestoreDatabase()
-        {
-            try
-            {
-                OpenFileDialog openFileDialog = new OpenFileDialog
-                {
-                    Filter = "Backup files (*.bak)|*.bak",
-                    InitialDirectory = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                        "CafeBarBackups"
-                    )
-                };
-
-                if (openFileDialog.ShowDialog() == true)
-                {
-                    string backupFile = openFileDialog.FileName;
-
-                    string restoreQuery = $@"
-                USE [master];
-                ALTER DATABASE [cafe_bar] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-                RESTORE DATABASE [cafe_bar] 
-                FROM DISK = '{backupFile}' 
-                WITH REPLACE;
-                ALTER DATABASE [cafe_bar] SET MULTI_USER;
-            ";
-
-                    db.Database.ExecuteSqlCommand(TransactionalBehavior.DoNotEnsureTransaction, restoreQuery);
-                    MessageBox.Show("База данных успешно восстановлена!", "Успех");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при восстановлении: {ex.Message}", "Ошибка");
-            }
-        }
-
-        private void ClearFields()
-        {
-            tbId.Text = "";
-            tbName.Text = "";
-            tbNumber.Text = "";
-            tbpost.Text = "";
-            tbEmail.Text = "";
-            imgEmployee.Source = null;
-        }
-
-        private void BackupButton_Click(object sender, RoutedEventArgs e)
-        {
-            BackupDatabase();
-        }
-
-        private void RestoreButton_Click(object sender, RoutedEventArgs e)
-        {
-            var result = MessageBox.Show("Вы уверены, что хотите восстановить базу данных из резервной копии? Все текущие данные будут заменены.",
-                                      "Подтверждение восстановления",
-                                      MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (result == MessageBoxResult.Yes)
-            {
-                RestoreDatabase();
-            }
-        }
-
-        private void ImportButton_Click(object sender, RoutedEventArgs e)
-        {
-            ImportFromFile();
-        }
-
-        private void ExportCsvButton_Click(object sender, RoutedEventArgs e)
-        {
-            ExportToCsv();
-        }
+        
 
         private void SelectPhoto_Click(object sender, RoutedEventArgs e)
         {
@@ -368,13 +207,12 @@ namespace material_design
             {
                 try
                 {
-                    byte[] imageData = File.ReadAllBytes(openFileDialog.FileName);
-                    DisplayImage(imageData);
+                    _currentPhotoData = File.ReadAllBytes(openFileDialog.FileName);
+                    DisplayImage(_currentPhotoData);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка загрузки изображения: {ex.Message}", "Ошибка",
-                                  MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Ошибка загрузки изображения: {ex.Message}");
                 }
             }
         }
@@ -382,6 +220,7 @@ namespace material_design
         private void RemovePhoto_Click(object sender, RoutedEventArgs e)
         {
             imgEmployee.Source = null;
+            _currentPhotoData = null;
         }
 
         private void DisplayImage(byte[] imageData)
@@ -402,28 +241,33 @@ namespace material_design
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка отображения изображения: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка отображения изображения: {ex.Message}");
             }
         }
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            if (App.UserContext.IsAuthenticated)
+            if (Appp.CurrentUser != null)
             {
-                var mainDashboard = new MainDashboard(
-                    App.UserContext.UserName,
-                    App.UserContext.UserRole,
-                    App.UserContext.AccessLevel);
-                mainDashboard.Show();
+                string userName = Appp.CurrentUser.Login;
+                string roleName = AccessControl.GetRoleName(Appp.CurrentUser.accessLevel);
+                int accessLevel = Appp.CurrentUser.accessLevel;
+
+                new MainDashboard(userName, roleName, accessLevel).Show();
             }
             else
             {
-                var authWindow = new autorization();
-                authWindow.Show();
+                // Если по какой-то причине пользователь не найден
+                new MainDashboard("Гость", "Неизвестно", 0).Show();
             }
-
             this.Close();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _context?.Dispose();
         }
     }
 }
+

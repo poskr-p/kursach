@@ -1,0 +1,48 @@
+﻿<Window x:Class="material_design.DemandForecastWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Прогноз спроса" Height="600" Width="800"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Выбор даты -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+            <TextBlock Text="Дата прогноза:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <DatePicker  Name="dpForecastDate"  Width="150"/>
+            <Button Name="btnForecast" Content="Прогноз" Click="BtnForecast_Click" Margin="20,0,0,0" Padding="10,5" Background="#FF3F51B5" Foreground="White"/>
+            <ProgressBar Name="pbLoading" Width="150" Height="20" Margin="20,0,0,0" IsIndeterminate="True" Visibility="Collapsed"/>
+        </StackPanel>
+
+        <!-- Выбор позиций (можно оставить пока все, либо сделать список для выбора) -->
+        <GroupBox Grid.Row="1" Header="Позиции для прогноза" Margin="0,0,0,15">
+            <StackPanel>
+                <RadioButton Name="rbAllItems" Content="Все позиции" IsChecked="True" Margin="5"/>
+                <RadioButton Name="rbSelectedItems" Content="Выбрать позиции" Margin="5"/>
+                <ListBox Name="lbMenuItems" Height="120" Margin="5,5,5,0" IsEnabled="False" SelectionMode="Multiple" DisplayMemberPath="ItemName"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Результаты прогноза -->
+        <GroupBox Grid.Row="2" Header="Результат прогноза" Margin="0,0,0,15">
+            <DataGrid Name="dgResults" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="ID" Binding="{Binding menu_item_id}" Width="50"/>
+                    <DataGridTextColumn Header="Название" Binding="{Binding item_name}" Width="*"/>
+                    <DataGridTextColumn Header="Прогноз (шт.)" Binding="{Binding predicted_quantity, StringFormat=F1}" Width="100"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+
+        <!-- Кнопка закрытия -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Закрыть" Click="BtnClose_Click" Padding="10,5"/>
+        </StackPanel>
+    </Grid>
+</Window>

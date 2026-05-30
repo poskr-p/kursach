@@ -1,4 +1,5 @@
-﻿using System;
+﻿using material_design.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -8,9 +9,9 @@ namespace material_design
 {
     public partial class MainDashboard : Window
     {
-        private string currentUserName;
-        private string currentUserRole;
-        private int currentUserAccessLevel;
+        private string currentUserName = "Пользователь";
+        private string currentUserRole = "Гость";
+        private int currentUserAccessLevel = 0;
 
         public class ModuleInfo
         {
@@ -19,23 +20,24 @@ namespace material_design
             public string Description { get; set; }
             public string Icon { get; set; }
         }
+        private readonly cafe_barEntities _context;
+        private readonly IBackupService _backupService;
+        public MainDashboard()
+        {
+            InitializeComponent();
+            InitializeUserInterface();
+            LoadModules();
+
+        }
 
         public MainDashboard(string userName, string userRole, int accessLevel)
         {
             InitializeComponent();
-
-            if (string.IsNullOrEmpty(userName))
-            {
-                var authWindow = new autorization();
-                authWindow.Show();
-                this.Close();
-                return;
-            }
-
             currentUserName = userName;
             currentUserRole = userRole;
             currentUserAccessLevel = accessLevel;
-
+            _context = new cafe_barEntities();
+            _backupService = new BackupService(_context);
             InitializeUserInterface();
             LoadModules();
         }
@@ -50,91 +52,37 @@ namespace material_design
         {
             var availableModules = new List<ModuleInfo>();
 
-            if (AccessControl.CanManageEmployees(currentUserAccessLevel))
-            {
-                availableModules.Add(new ModuleInfo
-                {
-                    Name = "PersonnelManagement",
-                    Title = "Управление персоналом",
-                    Description = "Сотрудники, должности, графики",
-                    Icon = "👥"
-                });
-            }
-
-            if (AccessControl.CanManageReservations(currentUserAccessLevel))
-            {
-                availableModules.Add(new ModuleInfo
-                {
-                    Name = "ReservationManagement",
-                    Title = "Управление бронированием",
-                    Description = "Бронирование столиков, управление бронями",
-                    Icon = "📅"
-                });
-            }
-
-            if (AccessControl.CanManageMenu(currentUserAccessLevel))
-            {
-                availableModules.Add(new ModuleInfo
-                {
-                    Name = "MenuManagement",
-                    Title = "Управление меню",
-                    Description = "Категории, позиции меню, цены",
-                    Icon = "🍽️"
-                });
-            }
-
-            if (AccessControl.CanManageSchedule(currentUserAccessLevel))
-            {
-                availableModules.Add(new ModuleInfo
-                {
-                    Name = "ScheduleManagement",
-                    Title = "Управление графиком",
-                    Description = "График работы сотрудников",
-                    Icon = "🕒"
-                });
-            }
-
-            if (AccessControl.CanViewReports(currentUserAccessLevel))
-            {
-                availableModules.Add(new ModuleInfo
-                {
-                    Name = "Reports",
-                    Title = "Отчеты и аналитика",
-                    Description = "Анализ продаж и эффективности",
-                    Icon = "📊"
-                });
-            }
-
-            if (AccessControl.CanTakeOrders(currentUserAccessLevel))
-            {
-                availableModules.Add(new ModuleInfo
-                {
-                    Name = "OrderTaking",
-                    Title = "Прием заказов",
-                    Description = "Создание и управление заказами",
-                    Icon = "📝"
-                });
-            }
-
             if (AccessControl.CanViewTables(currentUserAccessLevel))
-            {
-                availableModules.Add(new ModuleInfo
-                {
-                    Name = "TableView",
-                    Title = "Просмотр таблиц",
-                    Description = "Просмотр всех данных системы",
-                    Icon = "📋"
-                });
-            }
+                availableModules.Add(new ModuleInfo { Name = "TableView", Title = "Просмотр таблиц", Description = "Просмотр всех данных системы", Icon = "📋" });
 
             if (AccessControl.CanManageUsers(currentUserAccessLevel))
+                availableModules.Add(new ModuleInfo { Name = "UserManagement", Title = "Управление пользователями", Description = "Создание и управление учетными записями", Icon = "👤" });
+
+            if (AccessControl.CanTakeOrders(currentUserAccessLevel))
+                availableModules.Add(new ModuleInfo { Name = "OrderTaking", Title = "Прием заказов", Description = "Создание и управление заказами", Icon = "📝" });
+
+            if (AccessControl.CanManageEmployees(currentUserAccessLevel))
+                availableModules.Add(new ModuleInfo { Name = "PersonnelManagement", Title = "Управление персоналом", Description = "Сотрудники, должности, графики", Icon = "👥" });
+
+            if (AccessControl.CanManageReservations(currentUserAccessLevel))
+                availableModules.Add(new ModuleInfo { Name = "ReservationManagement", Title = "Управление бронированием", Description = "Бронирование столиков, управление бронями", Icon = "📅" });
+
+            if (AccessControl.CanManageMenu(currentUserAccessLevel))
+                availableModules.Add(new ModuleInfo { Name = "MenuManagement", Title = "Управление меню", Description = "Категории, позиции меню, цены", Icon = "🍽️" });
+
+            if (AccessControl.CanManageSchedule(currentUserAccessLevel))
+                availableModules.Add(new ModuleInfo { Name = "ScheduleManagement", Title = "Управление графиком", Description = "График работы сотрудников", Icon = "🕒" });
+
+            if (AccessControl.CanViewReports(currentUserAccessLevel))
+                availableModules.Add(new ModuleInfo { Name = "Reports", Title = "Отчеты и аналитика", Description = "Анализ продаж и эффективности", Icon = "📊" });
+            if (AccessControl.CanViewReports(currentUserAccessLevel)) // или другое право, например, CanTakeOrders
             {
                 availableModules.Add(new ModuleInfo
                 {
-                    Name = "UserManagement",
-                    Title = "Управление пользователями",
-                    Description = "Создание и управление учетными записями",
-                    Icon = "👤"
+                    Name = "DemandForecast",
+                    Title = "Прогноз спроса",
+                    Description = "Прогнозирование продаж на основе ML",
+                    Icon = "📈"
                 });
             }
 
@@ -158,73 +106,64 @@ namespace material_design
                     case "PersonnelManagement":
                         if (AccessControl.CanManageEmployees(currentUserAccessLevel))
                         {
-                            var mainWindow = new MainWindow();
-                            mainWindow.Show();
+                            new MainWindow().Show();
                             this.Hide();
                         }
                         break;
-
                     case "TableView":
                         if (AccessControl.CanViewTables(currentUserAccessLevel))
                         {
-                            var window2 = new Window2();
-                            window2.Show();
+                            new Window2().Show();
                             this.Hide();
                         }
                         break;
-
                     case "OrderTaking":
                         if (AccessControl.CanTakeOrders(currentUserAccessLevel))
                         {
-                            var orderWindow = new OrderTakingWindow(currentUserAccessLevel);
-                            orderWindow.Show();
+                            // В реальности нужно передать ID сотрудника, но пока заглушка
+                            new OrderTakingWindow(currentUserAccessLevel).Show();
                             this.Hide();
                         }
                         break;
-
                     case "ReservationManagement":
                         if (AccessControl.CanManageReservations(currentUserAccessLevel))
                         {
-                            var reservationWindow = new ReservationManagementWindow();
-                            reservationWindow.Show();
+                            new ReservationManagementWindow().Show();
                             this.Hide();
                         }
                         break;
-
                     case "MenuManagement":
                         if (AccessControl.CanManageMenu(currentUserAccessLevel))
                         {
-                            var menuWindow = new MenuManagementWindow();
-                            menuWindow.Show();
+                            new MenuManagementWindow().Show();
                             this.Hide();
                         }
                         break;
-
                     case "ScheduleManagement":
                         if (AccessControl.CanManageSchedule(currentUserAccessLevel))
                         {
-                            var scheduleWindow = new ScheduleManagementWindow();
-                            scheduleWindow.Show();
+                            new ScheduleManagementWindow().Show();
                             this.Hide();
                         }
                         break;
-
                     case "Reports":
                         if (AccessControl.CanViewReports(currentUserAccessLevel))
                         {
-                            var reportsWindow = new ReportsWindow();
-                            reportsWindow.Show();
+                            new ReportsWindow().Show();
                             this.Hide();
                         }
                         break;
-
                     case "UserManagement":
                         if (AccessControl.CanManageUsers(currentUserAccessLevel))
                         {
-                            var userManagementWindow = new UserManagementWindow();
-                            userManagementWindow.Show();
+                            new UserManagementWindow().Show();
                             this.Hide();
                         }
+                        break;
+                    case "DemandForecast":
+                        var forecastWindow = new DemandForecastWindow();
+                        forecastWindow.Owner = this;
+                        forecastWindow.ShowDialog();
                         break;
                 }
             }
@@ -240,13 +179,9 @@ namespace material_design
                                         "Подтверждение выхода",
                                         MessageBoxButton.YesNo,
                                         MessageBoxImage.Question);
-
             if (result == MessageBoxResult.Yes)
             {
-                App.UserContext.Clear();
-
-                var authWindow = new autorization();
-                authWindow.Show();
+                new autorization().Show();
                 this.Close();
             }
         }
@@ -256,5 +191,99 @@ namespace material_design
             base.OnClosed(e);
             Application.Current.Shutdown();
         }
+
+        private void MenuButton_Click(object sender, RoutedEventArgs e)
+        {
+            popupMenu.IsOpen = !popupMenu.IsOpen;
+        }
+
+        private void BackupDatabase_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!AccessControl.CanManageUsers(currentUserAccessLevel))
+                {
+                    MessageBox.Show("Только администратор может создавать резервные копии.", "Доступ запрещён",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (MessageBox.Show("Создать резервную копию базы данных?\nКопия будет сохранена в папке 'CafeBarBackups' в документах.",
+                    "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                {
+                    _backupService.BackupDatabase();
+                    MessageBox.Show("Резервная копия успешно создана!", "Успех",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при создании резервной копии: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                popupMenu.IsOpen = false;
+            }
+        }
+
+        private void RestoreDatabase_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!AccessControl.CanManageUsers(currentUserAccessLevel))
+                {
+                    MessageBox.Show("Только администратор может восстанавливать базу данных.", "Доступ запрещён",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Filter = "Backup files (*.bak)|*.bak",
+                    Title = "Выберите файл резервной копии"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    if (MessageBox.Show("Восстановление заменит все текущие данные. Продолжить?",
+                        "Внимание", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                    {
+                        _backupService.RestoreDatabase(dialog.FileName);
+                        MessageBox.Show("База данных восстановлена. Перезапустите приложение.", "Успех",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка восстановления: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                popupMenu.IsOpen = false;
+            }
+        }
+
+        private void AboutProgram_Click(object sender, RoutedEventArgs e)
+        {
+            var aboutWindow = new AboutWindow();
+            aboutWindow.Owner = this;
+            aboutWindow.ShowDialog();
+            popupMenu.IsOpen = false;
+        }
+        private void Logout_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("Вы уверены, что хотите выйти?", "Выход",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                Appp.CurrentUser = null;
+                new autorization().Show();
+                this.Close();
+            }
+            popupMenu.IsOpen = false;
+        }
     }
 }
+

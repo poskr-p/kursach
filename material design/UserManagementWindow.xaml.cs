@@ -1,6 +1,7 @@
-﻿using System;
+﻿using material_design.Repositories;
+using material_design.Services;
+using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,47 +10,27 @@ namespace material_design
 {
     public partial class UserManagementWindow : Window
     {
-        private cafe_barEntities db;
-        private Autorization currentUser;
+        private readonly cafe_barEntities _context;
+        private readonly IUserManagementService _userService;
+        private Autorization _currentUser;
 
         public UserManagementWindow()
         {
             InitializeComponent();
-            if (!App.UserContext.IsAuthenticated)
-            {
-                MessageBox.Show("Требуется авторизация");
-                var authWindow = new autorization();
-                authWindow.Show();
-                this.Close();
-                return;
-            }
-            db = new cafe_barEntities();
-            db.Autorization.Load(); 
+            _context = new cafe_barEntities();
+            var userRepo = new Repository<Autorization>(_context);
+            _userService = new UserManagementService(userRepo);
             LoadData();
+            LoadAccessLevels();
         }
 
         private void LoadData()
         {
-            try
-            {
-                var users = db.Autorization.Local.ToList();
-
-                foreach (var user in users)
-                {
-                    user.RoleName = AccessControl.GetRoleName(user.accessLevel);
-                }
-
-                dgUsers.ItemsSource = users;
-
-                LoadAccessLevels();
-
-                ClearForm();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}\n\n{ex.InnerException?.Message}",
-                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            var users = _userService.GetAllUsers();
+            foreach (var u in users)
+                u.RoleName = AccessControl.GetRoleName(u.accessLevel);
+            dgUsers.ItemsSource = users;
+            ClearForm();
         }
 
         private void LoadAccessLevels()
@@ -60,10 +41,10 @@ namespace material_design
                 { 3, "Бармен" },
                 { 2, "Официант" }
             };
-
             cbAccessLevel.ItemsSource = accessLevels;
             cbAccessLevel.DisplayMemberPath = "Value";
             cbAccessLevel.SelectedValuePath = "Key";
+            cbAccessLevel.SelectedIndex = 0;
         }
 
         private void SaveUser_Click(object sender, RoutedEventArgs e)
@@ -75,216 +56,109 @@ namespace material_design
 
                 if (string.IsNullOrEmpty(login))
                 {
-                    MessageBox.Show("Введите логин!", "Ошибка",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Введите логин!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                if (currentUser == null) 
+                if (_currentUser == null) // Добавление
                 {
                     if (string.IsNullOrEmpty(password) || password.Length < 4)
                     {
-                        MessageBox.Show("Пароль должен содержать минимум 4 символа!",
-                            "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show("Пароль должен содержать минимум 4 символа!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
-
                     if (cbAccessLevel.SelectedValue == null)
                     {
-                        MessageBox.Show("Выберите уровень доступа!",
-                            "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show("Выберите уровень доступа!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
-
-                    if (db.Autorization.Any(u => u.Login == login))
-                    {
-                        MessageBox.Show("Пользователь с таким логином уже существует!",
-                            "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-
                     byte accessLevel = (byte)cbAccessLevel.SelectedValue;
-
-                    var (hash, salt) = PasswordHelper.GenerateHash(password);
-
-                    var newUser = new Autorization
-                    {
-                        Login = login,
-                        PasswordHash = hash,
-                        Salt = salt,
-                        accessLevel = accessLevel,
-                        RoleName = AccessControl.GetRoleName(accessLevel)
-                    };
-
-                    db.Autorization.Add(newUser);
-                    db.SaveChanges();
-
-                    MessageBox.Show($"Пользователь '{login}' успешно добавлен!",
-                        "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    _userService.AddUser(login, password, accessLevel);
+                    MessageBox.Show($"Пользователь '{login}' успешно добавлен!", "Успех");
                 }
-                else 
+                else // Редактирование
                 {
-                    if (currentUser.Login != login &&
-                        db.Autorization.Any(u => u.Login == login && u.id != currentUser.id))
+                    if (_userService.GetAllUsers().Any(u => u.Login == login && u.id != _currentUser.id))
                     {
-                        MessageBox.Show("Пользователь с таким логином уже существует!",
-                            "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show("Пользователь с таким логином уже существует!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
-
-                    currentUser.Login = login;
-
-                    if (!string.IsNullOrEmpty(password) && password.Length >= 4)
-                    {
-                        var (hash, salt) = PasswordHelper.GenerateHash(password);
-                        currentUser.PasswordHash = hash;
-                        currentUser.Salt = salt;
-                    }
-
-                    if (cbAccessLevel.SelectedValue != null)
-                    {
-                        byte accessLevel = (byte)cbAccessLevel.SelectedValue;
-                        currentUser.accessLevel = accessLevel;
-                        currentUser.RoleName = AccessControl.GetRoleName(accessLevel);
-                    }
-
-                    db.SaveChanges();
-
-                    MessageBox.Show($"Пользователь '{login}' успешно обновлен!",
-                        "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    _currentUser.Login = login;
+                    string newPassword = string.IsNullOrEmpty(password) || password.Length < 4 ? null : password;
+                    _userService.UpdateUser(_currentUser, newPassword);
+                    MessageBox.Show($"Пользователь '{login}' успешно обновлен!", "Успех");
                 }
 
                 LoadData();
             }
-            catch (System.Data.Entity.Validation.DbEntityValidationException ex)
-            {
-                string errorMessage = "Ошибка валидации:\n";
-                foreach (var validationErrors in ex.EntityValidationErrors)
-                {
-                    foreach (var validationError in validationErrors.ValidationErrors)
-                    {
-                        errorMessage += $"• {validationError.PropertyName}: {validationError.ErrorMessage}\n";
-                    }
-                }
-                MessageBox.Show(errorMessage, "Ошибка валидации",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            catch (System.Data.Entity.Infrastructure.DbUpdateException ex)
-            {
-                string errorMessage = "Ошибка обновления базы данных:\n";
-                var innerException = ex.InnerException;
-                while (innerException != null)
-                {
-                    errorMessage += $"{innerException.Message}\n";
-                    innerException = innerException.InnerException;
-                }
-                MessageBox.Show(errorMessage, "Ошибка базы данных",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
-                string errorMessage = $"Ошибка сохранения: {ex.Message}";
-                if (ex.InnerException != null)
-                {
-                    errorMessage += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
-                    if (ex.InnerException.InnerException != null)
-                    {
-                        errorMessage += $"\nДетали: {ex.InnerException.InnerException.Message}";
-                    }
-                }
-                MessageBox.Show(errorMessage, "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка сохранения: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void DeleteUser_Click(object sender, RoutedEventArgs e)
         {
-            if (currentUser == null) return;
-
+            if (_currentUser == null) return;
             try
             {
-                if (currentUser.accessLevel == 5)
+                if (_userService.IsLastAdmin(_currentUser.id))
                 {
-                    int adminCount = db.Autorization.Count(u => u.accessLevel == 5);
-                    if (adminCount <= 1)
-                    {
-                        MessageBox.Show("Нельзя удалить последнего администратора!",
-                            "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
+                    MessageBox.Show("Нельзя удалить последнего администратора!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
-
-                var result = MessageBox.Show($"Вы уверены, что хотите удалить пользователя '{currentUser.Login}'?",
+                var result = MessageBox.Show($"Вы уверены, что хотите удалить пользователя '{_currentUser.Login}'?",
                     "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
                 if (result == MessageBoxResult.Yes)
                 {
-                    db.Autorization.Remove(currentUser);
-                    db.SaveChanges();
-
-                    MessageBox.Show("Пользователь успешно удален!",
-                        "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    _userService.DeleteUser(_currentUser.id);
                     LoadData();
+                    MessageBox.Show("Пользователь успешно удален!", "Успех");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка удаления: {ex.Message}",
-                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка удаления: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void ClearForm_Click(object sender, RoutedEventArgs e)
-        {
-            ClearForm();
-        }
+        private void ClearForm_Click(object sender, RoutedEventArgs e) => ClearForm();
 
         private void ClearForm()
         {
-            currentUser = null;
+            _currentUser = null;
             txtLogin.Text = "";
             txtPassword.Password = "";
             cbAccessLevel.SelectedIndex = 0;
+            btnDelete.IsEnabled = false;
         }
 
         private void dgUsers_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (dgUsers.SelectedItem is Autorization user)
             {
-                currentUser = user;
+                _currentUser = user;
                 txtLogin.Text = user.Login;
-
-                foreach (KeyValuePair<byte, string> item in cbAccessLevel.Items)
-                {
-                    if (item.Key == user.accessLevel)
-                    {
-                        cbAccessLevel.SelectedValue = item.Key;
-                        break;
-                    }
-                }
-
-                txtPassword.Password = ""; 
+                cbAccessLevel.SelectedValue = user.accessLevel;
+                txtPassword.Password = "";
+                btnDelete.IsEnabled = true;
             }
         }
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            if (App.UserContext.IsAuthenticated)
-            {
-                var mainDashboard = new MainDashboard(
-                    App.UserContext.UserName,
-                    App.UserContext.UserRole,
-                    App.UserContext.AccessLevel);
-                mainDashboard.Show();
-            }
+            if (Appp.CurrentUser != null)
+                new MainDashboard(Appp.CurrentUser.Login, AccessControl.GetRoleName(Appp.CurrentUser.accessLevel), Appp.CurrentUser.accessLevel).Show();
             else
-            {
-                var authWindow = new autorization();
-                authWindow.Show();
-            }
-
+                new MainDashboard().Show();
             this.Close();
         }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _context?.Dispose();
+        }
     }
-    
 }
+

@@ -1,0 +1,290 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="material_design.DTO.ClientDto" Collapsed="true">
+    <Position X="9.5" Y="1.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAQAAgAAAAA=</HashCode>
+      <FileName>DTO\ClientDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.DTO.EmployeeDto" Collapsed="true">
+    <Position X="17.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAQAAAAAAAAAggCAAAAAAAgQAAQAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTO\EmployeeDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.DTO.OrderItemDto" Collapsed="true">
+    <Position X="18.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAEAAAAAAAEAAAAAAAAAAAAAQAAAAAAAAAAgAAAAAA=</HashCode>
+      <FileName>DTO\OrderItemDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.DTO.MenuReportDto" Collapsed="true">
+    <Position X="17.25" Y="1.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAIAAAAQIEAAAA=</HashCode>
+      <FileName>DTO\ReportDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.DTO.FinancialReportDto" Collapsed="true">
+    <Position X="15.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAQ=</HashCode>
+      <FileName>DTO\ReportDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.DTO.EmployeeScheduleDto" Collapsed="true">
+    <Position X="11" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAYAAIAACAAAAAAAAAAACAAIACAIAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTO\ScheduleDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.DTO.ShiftDto" Collapsed="true">
+    <Position X="9.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAAAAAAAAAAAAAAAAAAIAAgAAABAAAAAAACAAA=</HashCode>
+      <FileName>DTO\ScheduleDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.Repositories.Repository&lt;T&gt;">
+    <Position X="13" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAYAAIAAAAAABAAAAQAAIAAAAAEAAAAAAiAAAAAAAIA=</HashCode>
+      <FileName>Repositories\Repository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="material_design.Services.AuthService" BaseTypeListCollapsed="true">
+    <Position X="13.25" Y="2.75" Width="1.5" />
+    <AssociationLine Name="_userRepo" Type="material_design.Repositories.IRepository&lt;T&gt;">
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="0.059" Y="0.377" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAEAA=</HashCode>
+      <FileName>Services\AuthService.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_userRepo" />
+    </ShowAsAssociation>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="material_design.Services.EmployeeService" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="7.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgwAAEAACQIAAAAAAAAAIAAAAAAAAACIAAAAAAAAAAA=</HashCode>
+      <FileName>Services\EmployeeService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="material_design.Services.FilterService" BaseTypeListCollapsed="true">
+    <Position X="10.5" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgQIAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAgAAAAAA=</HashCode>
+      <FileName>Services\FilterService.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_clientRepo" />
+      <Field Name="_postRepo" />
+      <Field Name="_employeeRepo" />
+    </ShowAsAssociation>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="material_design.Services.MenuService" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="5.5" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ACAAQAAAAAAAAAAAAAAAAABQAACCAAAAAAAAAAEAAAA=</HashCode>
+      <FileName>Services\MenuService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="material_design.Services.OrderService" BaseTypeListCollapsed="true">
+    <Position X="15.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgQIEAAAAAAQgAAAAAAAAABAAQAAAAAAAEgAgAEAAAA=</HashCode>
+      <FileName>Services\OrderService.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_categoryRepo" />
+      <Field Name="_clientRepo" />
+      <Field Name="_menuRepo" />
+      <Field Name="_orderRepo" />
+      <Field Name="_employeeRepo" />
+      <Field Name="_postRepo" />
+      <Field Name="_orderDetailsRepo" />
+    </ShowAsAssociation>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="material_design.Services.ReportService" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="8" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgQKAEAAQAAAABAAAAAAAABBAAAAAAAAAEgAAAEAAEA=</HashCode>
+      <FileName>Services\ReportService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="material_design.Services.ReservationService" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="5.5" Y="6" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAUIAAAAAAAAgAAAUAAAAAAAAIAAAAAAAAAAggAAAAA=</HashCode>
+      <FileName>Services\ReservationService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="material_design.Services.ScheduleService" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="7.5" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgQAAAAAAAAAgABAAAAAABAAAAAgAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Services\ScheduleService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="material_design.Services.UserManagementService" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="5.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEAAAAAAAAAQAAAAAgAAABAAEAEAA=</HashCode>
+      <FileName>Services\UserManagementService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="material_design.AccessControl" Collapsed="true">
+    <Position X="19.5" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAAACAAAAEAAgAAAAAAAAAAAAQgBwAAQAAA=</HashCode>
+      <FileName>AccessControl.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.Appp" Collapsed="true">
+    <Position X="19.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAIAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Appp.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.RussianTranslator" Collapsed="true">
+    <Position X="19.5" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAgAAAAAAAAAAAAAASAAAAAAAAAAAAAAAEACAAAAAA=</HashCode>
+      <FileName>RussianTranslator.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PasswordHelper" Collapsed="true">
+    <Position X="19.5" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAEAAAAAwAACAAIAAAAAAAAAAAAAAABAAAA=</HashCode>
+      <FileName>PasswordHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="practice_bd_podkluchenie.NullToVisibilityConverter" Collapsed="true">
+    <Position X="19.5" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>NullToVisibilityConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="material_design.ExceptionHelper" Collapsed="true">
+    <Position X="19.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAABAAAAAgAAAAAAAAAAAAA=</HashCode>
+      <FileName>ExceptionHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.ByteArrayToImageConverter" Collapsed="true">
+    <Position X="19.5" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>ByteArrayToImageConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="material_design.BaseWindow" Collapsed="true">
+    <Position X="19.5" Y="7.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAEAAAAAAAAA=</HashCode>
+      <FileName>BaseWindow.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="material_design.Autorization" Collapsed="true">
+    <Position X="19.5" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AADAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAQEAAAAgA=</HashCode>
+      <FileName>AutorizationExtensions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="material_design.Repositories.IRepository&lt;T&gt;">
+    <Position X="13" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAYAAIAAAAAAAAAAAQAAAAAAAAEAAAAAAgAAAAAAAIA=</HashCode>
+      <FileName>Repositories\IRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="material_design.Services.IAuthService">
+    <Position X="13.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAA=</HashCode>
+      <FileName>Services\IAuthService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="material_design.Services.IFilterService">
+    <Position X="10.5" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAgAAAAAA=</HashCode>
+      <FileName>Services\IFilterService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="material_design.Services.IMenuService" Collapsed="true">
+    <Position X="5.5" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ACAAQAAAAAAAAAAAAAAAAAAQAACCAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Services\IMenuService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="material_design.Services.IOrderService">
+    <Position X="15.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAAAAAQgAAAAAAAAAAAAQAAAAAAAAAAgAAAAAA=</HashCode>
+      <FileName>Services\IOrderService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="material_design.Services.IReportService" Collapsed="true">
+    <Position X="8" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAEAAQAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAEA=</HashCode>
+      <FileName>Services\IReportService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="material_design.Services.IReservationService" Collapsed="true">
+    <Position X="5.5" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAgAAAUAAAAAAAAIAAAAAAAAAAggAAAAA=</HashCode>
+      <FileName>Services\IReservationService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="material_design.Services.IScheduleService" Collapsed="true">
+    <Position X="7.5" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAgABAAAAAAAAAAAAgAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Services\IScheduleService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="material_design.Services.IUserManagementService" Collapsed="true">
+    <Position X="5.5" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEAAAAAAAAAQAAAAAgAAABAAEAAAA=</HashCode>
+      <FileName>Services\IUserManagementService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="IEmployeeService" Collapsed="true">
+    <Position X="7.5" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAAEAACQIAAAAAAAAAIAAAAAAAAACIAAAAAAAAAAA=</HashCode>
+      <FileName>Services\IEmployeeService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

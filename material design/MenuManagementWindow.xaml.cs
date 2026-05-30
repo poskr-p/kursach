@@ -1,5 +1,6 @@
-﻿using System;
-using System.Data.Entity;
+﻿using material_design.Repositories;
+using material_design.Services;
+using System;
 using System.Linq;
 using System.Windows;
 
@@ -7,30 +8,24 @@ namespace material_design
 {
     public partial class MenuManagementWindow : Window
     {
-        private cafe_barEntities db;
-        private Menu currentMenuItem;
+        private readonly cafe_barEntities _context;
+        private readonly IMenuService _menuService;
+        private Menu _currentMenuItem;
 
         public MenuManagementWindow()
         {
             InitializeComponent();
-
-            if (!App.UserContext.IsAuthenticated)
-            {
-                MessageBox.Show("Требуется авторизация");
-                var authWindow = new autorization();
-                authWindow.Show();
-                this.Close();
-                return;
-            }
-
-            db = new cafe_barEntities();
+            _context = new cafe_barEntities();
+            var menuRepo = new Repository<Menu>(_context);
+            var categoryRepo = new Repository<CategoriesMenu>(_context);
+            _menuService = new MenuService(menuRepo, categoryRepo);
             InitializeData();
             LoadMenuItems();
         }
 
         private void InitializeData()
         {
-            var categories = db.CategoriesMenu.ToList();
+            var categories = _menuService.GetAllCategories();
             cbCategory.ItemsSource = categories;
             cbCategory.DisplayMemberPath = "title_category";
             cbCategory.SelectedValuePath = "id_category";
@@ -38,12 +33,10 @@ namespace material_design
 
         private void LoadMenuItems()
         {
-            var menuItems = db.Menu
-                .Include(m => m.CategoriesMenu)
+            var menuItems = _menuService.GetAllMenuItems()
                 .OrderBy(m => m.id_category_fk)
                 .ThenBy(m => m.item_name)
                 .ToList();
-
             dgMenuItems.ItemsSource = menuItems;
         }
 
@@ -70,7 +63,7 @@ namespace material_design
                     return;
                 }
 
-                if (currentMenuItem == null)
+                if (_currentMenuItem == null)
                 {
                     var newMenuItem = new Menu
                     {
@@ -78,19 +71,15 @@ namespace material_design
                         id_category_fk = (int)cbCategory.SelectedValue,
                         cost_item = cost
                     };
-
-                    db.Menu.Add(newMenuItem);
-                    db.SaveChanges();
+                    _menuService.AddMenuItem(newMenuItem);
                     MessageBox.Show("Позиция успешно добавлена в меню!");
                 }
                 else
                 {
-                    // Редактирование существующей позиции
-                    currentMenuItem.item_name = itemName;
-                    currentMenuItem.id_category_fk = (int)cbCategory.SelectedValue;
-                    currentMenuItem.cost_item = cost;
-
-                    db.SaveChanges();
+                    _currentMenuItem.item_name = itemName;
+                    _currentMenuItem.id_category_fk = (int)cbCategory.SelectedValue;
+                    _currentMenuItem.cost_item = cost;
+                    _menuService.UpdateMenuItem(_currentMenuItem);
                     MessageBox.Show("Позиция успешно обновлена!");
                 }
 
@@ -105,20 +94,17 @@ namespace material_design
 
         private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (currentMenuItem == null) return;
-
+            if (_currentMenuItem == null) return;
             try
             {
                 var result = MessageBox.Show("Вы уверены, что хотите удалить эту позицию из меню?",
                     "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
                 if (result == MessageBoxResult.Yes)
                 {
-                    db.Menu.Remove(currentMenuItem);
-                    db.SaveChanges();
-                    MessageBox.Show("Позиция успешно удалена из меню!");
+                    _menuService.DeleteMenuItem(_currentMenuItem.id_menu_item);
                     LoadMenuItems();
                     ClearForm();
+                    MessageBox.Show("Позиция успешно удалена из меню!");
                 }
             }
             catch (Exception ex)
@@ -127,14 +113,11 @@ namespace material_design
             }
         }
 
-        private void ClearForm_Click(object sender, RoutedEventArgs e)
-        {
-            ClearForm();
-        }
+        private void ClearForm_Click(object sender, RoutedEventArgs e) => ClearForm();
 
         private void ClearForm()
         {
-            currentMenuItem = null;
+            _currentMenuItem = null;
             txtItemName.Text = "";
             cbCategory.SelectedIndex = -1;
             txtCost.Text = "";
@@ -144,7 +127,7 @@ namespace material_design
         {
             if (dgMenuItems.SelectedItem is Menu menuItem)
             {
-                currentMenuItem = menuItem;
+                _currentMenuItem = menuItem;
                 txtItemName.Text = menuItem.item_name;
                 cbCategory.SelectedValue = menuItem.id_category_fk;
                 txtCost.Text = menuItem.cost_item.ToString("0.00");
@@ -153,21 +136,20 @@ namespace material_design
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            if (App.UserContext.IsAuthenticated)
-            {
-                var mainDashboard = new MainDashboard(
-                    App.UserContext.UserName,
-                    App.UserContext.UserRole,
-                    App.UserContext.AccessLevel);
-                mainDashboard.Show();
-            }
+            if (Appp.CurrentUser != null)
+                new MainDashboard(Appp.CurrentUser.Login, AccessControl.GetRoleName(Appp.CurrentUser.accessLevel), Appp.CurrentUser.accessLevel).Show();
             else
-            {
-                var authWindow = new autorization();
-                authWindow.Show();
-            }
-
+                new MainDashboard().Show();
             this.Close();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _context?.Dispose();
         }
     }
 }
+
+
+

@@ -28,11 +28,11 @@
 
             <!-- Список бронирований -->
             <DataGrid Grid.Column="0" Name="dgReservations" AutoGenerateColumns="False"
-                     Margin="0,0,10,0" SelectionChanged="dgReservations_SelectionChanged">
+          Margin="0,0,10,0" SelectionChanged="dgReservations_SelectionChanged">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="ID" Binding="{Binding id_reservation}" Width="50"/>
-                    <DataGridTextColumn Header="Клиент" Binding="{Binding Client.name_client}" Width="150"/>
-                    <DataGridTextColumn Header="Сотрудник" Binding="{Binding Employee.name_employee}" Width="150"/>
+                    <DataGridTextColumn Header="Клиент" Binding="{Binding Clients.name_client}" Width="150"/>
+                    <DataGridTextColumn Header="Сотрудник" Binding="{Binding Employees.name_employee}" Width="150"/>
                     <DataGridTextColumn Header="Дата и время" Binding="{Binding reservation_date, StringFormat=dd.MM.yyyy HH:mm}" Width="120"/>
                     <DataGridTextColumn Header="Гостей" Binding="{Binding guests_count}" Width="70"/>
                 </DataGrid.Columns>

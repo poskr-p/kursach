@@ -1,40 +1,30 @@
-﻿using System;
+﻿using material_design.DTO;
+using material_design.Repositories;
+using material_design.Services;
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace material_design
 {
     public partial class ScheduleManagementWindow : Window
     {
-        private cafe_barEntities db;
+        private readonly cafe_barEntities _context;
+        private readonly IScheduleService _scheduleService;
         private DateTime currentWeekStart;
-
-        public class EmployeeSchedule
-        {
-            public string EmployeeName { get; set; }
-            public string Monday { get; set; }
-            public string Tuesday { get; set; }
-            public string Wednesday { get; set; }
-            public string Thursday { get; set; }
-            public string Friday { get; set; }
-            public string Saturday { get; set; }
-            public string Sunday { get; set; }
-        }
 
         public ScheduleManagementWindow()
         {
             InitializeComponent();
-            if (!App.UserContext.IsAuthenticated)
-            {
-                MessageBox.Show("Требуется авторизация");
-                var authWindow = new autorization();
-                authWindow.Show();
-                this.Close();
-                return;
-            }
-            db = new cafe_barEntities();
+            _context = new cafe_barEntities();
+            var employeeRepo = new Repository<Employees>(_context);
+            var scheduleRepo = new Repository<WorkSchedule>(_context);
+            var postRepo = new Repository<Post>(_context);
+            _scheduleService = new ScheduleService(employeeRepo, scheduleRepo, postRepo);
+
             InitializeData();
             currentWeekStart = GetStartOfWeek(DateTime.Today);
             UpdateWeekDisplay();
@@ -43,16 +33,14 @@ namespace material_design
 
         private void InitializeData()
         {
-            var employees = db.Employees
-                .Where(e => e.Post.title_post == "Официант" || e.Post.title_post == "Бармен")
-                .ToList();
+            var employees = _scheduleService.GetEmployees();
             cbEmployee.ItemsSource = employees;
             cbEmployee.DisplayMemberPath = "name_employee";
             cbEmployee.SelectedValuePath = "id_employee";
 
             dpWorkDate.SelectedDate = DateTime.Today;
-            cbStartTime.SelectedIndex = 4; // 12:00 по умолчанию
-            cbEndTime.SelectedIndex = 6;   // 20:00 по умолчанию
+            cbStartTime.SelectedIndex = 4; // 12:00
+            cbEndTime.SelectedIndex = 6;   // 20:00
         }
 
         private DateTime GetStartOfWeek(DateTime date)
@@ -70,55 +58,8 @@ namespace material_design
 
         private void LoadSchedule()
         {
-            DateTime weekEnd = currentWeekStart.AddDays(7);
-
-            var employees = db.Employees
-                .Where(e => e.Post.title_post == "Официант" || e.Post.title_post == "Бармен")
-                .ToList();
-
-            var scheduleList = new List<EmployeeSchedule>();
-
-            foreach (var employee in employees)
-            {
-                var schedule = new EmployeeSchedule
-                {
-                    EmployeeName = employee.name_employee
-                };
-
-                for (int i = 0; i < 7; i++)
-                {
-                    DateTime day = currentWeekStart.AddDays(i);
-                    
-                    string shift = GetShiftForEmployee(employee.id_employee, day);
-
-                    switch (i)
-                    {
-                        case 0: schedule.Monday = shift; break;
-                        case 1: schedule.Tuesday = shift; break;
-                        case 2: schedule.Wednesday = shift; break;
-                        case 3: schedule.Thursday = shift; break;
-                        case 4: schedule.Friday = shift; break;
-                        case 5: schedule.Saturday = shift; break;
-                        case 6: schedule.Sunday = shift; break;
-                    }
-                }
-
-                scheduleList.Add(schedule);
-            }
-
+            var scheduleList = _scheduleService.GetScheduleForWeek(currentWeekStart);
             dgSchedule.ItemsSource = scheduleList;
-        }
-
-        private string GetShiftForEmployee(int employeeId, DateTime date)
-        {
-            
-            var random = new Random(employeeId + date.DayOfYear);
-            if (random.Next(0, 100) > 70) 
-            {
-                string[] shifts = { "08:00-16:00", "12:00-20:00", "16:00-00:00" };
-                return shifts[random.Next(0, shifts.Length)];
-            }
-            return "Выходной";
         }
 
         private void AddShift_Click(object sender, RoutedEventArgs e)
@@ -137,18 +78,30 @@ namespace material_design
                     return;
                 }
 
-                string startTime = (cbStartTime.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content.ToString();
-                string endTime = (cbEndTime.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content.ToString();
+                string startTimeStr = (cbStartTime.SelectedItem as ComboBoxItem)?.Content.ToString();
+                string endTimeStr = (cbEndTime.SelectedItem as ComboBoxItem)?.Content.ToString();
 
-                if (string.IsNullOrEmpty(startTime) || string.IsNullOrEmpty(endTime))
+                if (string.IsNullOrEmpty(startTimeStr) || string.IsNullOrEmpty(endTimeStr))
                 {
                     MessageBox.Show("Выберите время начала и конца смены!");
                     return;
                 }
 
-                MessageBox.Show($"Смена добавлена для сотрудника {cbEmployee.Text}\n" +
-                              $"Дата: {dpWorkDate.SelectedDate.Value:dd.MM.yyyy}\n" +
-                              $"Время: {startTime}-{endTime}");
+                if (!TimeSpan.TryParse(startTimeStr, out TimeSpan startTime) ||
+                    !TimeSpan.TryParse(endTimeStr, out TimeSpan endTime))
+                {
+                    MessageBox.Show("Некорректный формат времени!");
+                    return;
+                }
+
+                if (startTime >= endTime)
+                {
+                    MessageBox.Show("Время начала должно быть меньше времени окончания!");
+                    return;
+                }
+
+                _scheduleService.AddShift((int)cbEmployee.SelectedValue, dpWorkDate.SelectedDate.Value, startTime, endTime);
+                MessageBox.Show("Смена добавлена!");
 
                 LoadSchedule();
                 ClearForm();
@@ -180,10 +133,7 @@ namespace material_design
             LoadSchedule();
         }
 
-        private void ClearForm_Click(object sender, RoutedEventArgs e)
-        {
-            ClearForm();
-        }
+        private void ClearForm_Click(object sender, RoutedEventArgs e) => ClearForm();
 
         private void ClearForm()
         {
@@ -195,33 +145,25 @@ namespace material_design
 
         private void ExportToExcel_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                MessageBox.Show(" функция в разработке");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка экспорта: {ex.Message}");
-            }
+            MessageBox.Show("Экспорт в Excel - функция в разработке");
         }
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            if (App.UserContext.IsAuthenticated)
-            {
-                var mainDashboard = new MainDashboard(
-                    App.UserContext.UserName,
-                    App.UserContext.UserRole,
-                    App.UserContext.AccessLevel);
-                mainDashboard.Show();
-            }
+            if (Appp.CurrentUser != null)
+                new MainDashboard(Appp.CurrentUser.Login, AccessControl.GetRoleName(Appp.CurrentUser.accessLevel), Appp.CurrentUser.accessLevel).Show();
             else
-            {
-                var authWindow = new autorization();
-                authWindow.Show();
-            }
-
+                new MainDashboard().Show();
             this.Close();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _context?.Dispose();
         }
     }
 }
+
+
+

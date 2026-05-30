@@ -41,7 +41,7 @@
                     Background="#FF3F51B5" Foreground="White"/>
 
             <Button Content="Отмена"
-                    Click="RegisterButton_Click"
+                    Click="CancelButton_Click"
                     Width="120" Height="30"
                     Background="LightGray"/>
         </StackPanel>

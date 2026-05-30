@@ -1,4 +1,7 @@
-﻿using System;
+﻿using material_design.DTO;
+using material_design.Repositories;
+using material_design.Services;
+using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,42 +11,27 @@ namespace material_design
 {
     public partial class filtering : Window
     {
-        private cafe_barEntities db;
+        private readonly cafe_barEntities _context;
+        private readonly IFilterService _filterService;
         private string currentDataType = "Сотрудники";
 
         public filtering()
         {
-            try
-            {
-                InitializeComponent();
+            InitializeComponent();
+            _context = new cafe_barEntities();
+            var employeeRepo = new Repository<Employees>(_context);
+            var postRepo = new Repository<Post>(_context);
+            var clientRepo = new Repository<Clients>(_context);
+            _filterService = new FilterService(employeeRepo, postRepo, clientRepo);
 
-                if (!App.UserContext.IsAuthenticated)
-                {
-                    MessageBox.Show("Требуется авторизация");
-                    var authWindow = new autorization();
-                    authWindow.Show();
-                    this.Close();
-                    return;
-                }
-
-                db = new cafe_barEntities();
-
-                cbDataType.SelectedIndex = 0;
-
-                tbSearch.Text = "Поиск по имени";
-                tbSearch.Foreground = Brushes.Gray;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка инициализации: {ex.Message}");
-                Close();
-            }
+            cbDataType.SelectedIndex = 0;
+            tbSearch.Text = "Поиск по имени";
+            tbSearch.Foreground = Brushes.Gray;
         }
 
         private void cbDataType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (cbDataType.SelectedItem == null) return;
-
             currentDataType = (cbDataType.SelectedItem as ComboBoxItem)?.Content.ToString();
             LoadData();
         }
@@ -54,11 +42,25 @@ namespace material_design
             {
                 if (currentDataType == "Сотрудники")
                 {
-                    LoadEmployeesData();
+                    var employees = _filterService.GetEmployees();
+                    dgData.ItemsSource = employees;
+
+                    cbFilter.ItemsSource = employees;
+                    cbFilter.DisplayMemberPath = "name_employee";
+                    cbFilter.SelectedValuePath = "id_employee";
+
+                    ConfigureEmployeeColumns();
                 }
                 else if (currentDataType == "Клиенты")
                 {
-                    LoadClientsData();
+                    var clients = _filterService.GetClients();
+                    dgData.ItemsSource = clients;
+
+                    cbFilter.ItemsSource = clients;
+                    cbFilter.DisplayMemberPath = "name_client";
+                    cbFilter.SelectedValuePath = "id_client";
+
+                    ConfigureClientColumns();
                 }
             }
             catch (Exception ex)
@@ -67,25 +69,8 @@ namespace material_design
             }
         }
 
-        private void LoadEmployeesData()
+        private void ConfigureEmployeeColumns()
         {
-            var query = from emp in db.Employees
-                        join post in db.Post on emp.post_emp_fk equals post.id_post
-                        select new
-                        {
-                            emp.id_employee,
-                            emp.name_employee,
-                            emp.ph_number_emp,
-                            title_post = post.title_post
-                        };
-
-            var result = query.ToList();
-            dgData.ItemsSource = result;
-
-            cbFilter.ItemsSource = result;
-            cbFilter.DisplayMemberPath = "name_employee";
-            cbFilter.SelectedValuePath = "id_employee";
-
             dgData.Columns.Clear();
             dgData.Columns.Add(new DataGridTextColumn
             {
@@ -113,23 +98,8 @@ namespace material_design
             });
         }
 
-        private void LoadClientsData()
+        private void ConfigureClientColumns()
         {
-            var query = from client in db.Clients
-                        select new
-                        {
-                            client.id_client,
-                            client.name_client,
-                            client.ph_numb_client
-                        };
-
-            var result = query.ToList();
-            dgData.ItemsSource = result;
-
-            cbFilter.ItemsSource = result;
-            cbFilter.DisplayMemberPath = "name_client";
-            cbFilter.SelectedValuePath = "id_client";
-
             dgData.Columns.Clear();
             dgData.Columns.Add(new DataGridTextColumn
             {
@@ -153,8 +123,7 @@ namespace material_design
 
         private void tbSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (db == null) return;
-
+            if (_filterService == null) return;
             try
             {
                 if (string.IsNullOrWhiteSpace(tbSearch.Text) || tbSearch.Text == "Поиск по имени")
@@ -165,29 +134,13 @@ namespace material_design
 
                 if (currentDataType == "Сотрудники")
                 {
-                    var filtered = from emp in db.Employees
-                                   join post in db.Post on emp.post_emp_fk equals post.id_post
-                                   where emp.name_employee.Contains(tbSearch.Text)
-                                   select new
-                                   {
-                                       emp.id_employee,
-                                       emp.name_employee,
-                                       emp.ph_number_emp,
-                                       title_post = post.title_post
-                                   };
-                    dgData.ItemsSource = filtered.ToList();
+                    var filtered = _filterService.GetEmployees(tbSearch.Text);
+                    dgData.ItemsSource = filtered;
                 }
                 else if (currentDataType == "Клиенты")
                 {
-                    var filtered = from client in db.Clients
-                                   where client.name_client.Contains(tbSearch.Text)
-                                   select new
-                                   {
-                                       client.id_client,
-                                       client.name_client,
-                                       client.ph_numb_client
-                                   };
-                    dgData.ItemsSource = filtered.ToList();
+                    var filtered = _filterService.GetClients(tbSearch.Text);
+                    dgData.ItemsSource = filtered;
                 }
             }
             catch (Exception ex)
@@ -210,33 +163,15 @@ namespace material_design
                 {
                     dynamic selected = cbFilter.SelectedItem;
                     int selectedId = selected.id_employee;
-
-                    var filtered = from emp in db.Employees
-                                   join post in db.Post on emp.post_emp_fk equals post.id_post
-                                   where emp.id_employee == selectedId
-                                   select new
-                                   {
-                                       emp.id_employee,
-                                       emp.name_employee,
-                                       emp.ph_number_emp,
-                                       title_post = post.title_post
-                                   };
-                    dgData.ItemsSource = filtered.ToList();
+                    var filtered = _filterService.GetEmployees().Where(emp => emp.id_employee == selectedId).ToList();
+                    dgData.ItemsSource = filtered;
                 }
                 else if (currentDataType == "Клиенты")
                 {
                     dynamic selected = cbFilter.SelectedItem;
                     int selectedId = selected.id_client;
-
-                    var filtered = from client in db.Clients
-                                   where client.id_client == selectedId
-                                   select new
-                                   {
-                                       client.id_client,
-                                       client.name_client,
-                                       client.ph_numb_client
-                                   };
-                    dgData.ItemsSource = filtered.ToList();
+                    var filtered = _filterService.GetClients().Where(c => c.id_client == selectedId).ToList();
+                    dgData.ItemsSource = filtered;
                 }
             }
             catch (Exception ex)
@@ -283,21 +218,19 @@ namespace material_design
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            if (App.UserContext.IsAuthenticated)
-            {
-                var mainDashboard = new MainDashboard(
-                    App.UserContext.UserName,
-                    App.UserContext.UserRole,
-                    App.UserContext.AccessLevel);
-                mainDashboard.Show();
-            }
+            if (Appp.CurrentUser != null)
+                new MainDashboard(Appp.CurrentUser.Login, AccessControl.GetRoleName(Appp.CurrentUser.accessLevel), Appp.CurrentUser.accessLevel).Show();
             else
-            {
-                var authWindow = new autorization();
-                authWindow.Show();
-            }
-
+                new MainDashboard().Show();
             this.Close();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _context?.Dispose();
         }
     }
 }
+
+

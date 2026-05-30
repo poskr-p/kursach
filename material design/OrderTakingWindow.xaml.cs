@@ -1,6 +1,8 @@
-﻿using System;
+﻿using material_design.DTO;
+using material_design.Repositories;
+using material_design.Services;
+using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,44 +12,49 @@ namespace material_design
 {
     public partial class OrderTakingWindow : Window
     {
-        private cafe_barEntities db;
-        private List<OrderItem> currentOrderItems;
+        private readonly cafe_barEntities _context;
+        private readonly IOrderService _orderService;
+        private List<OrderItemDto> currentOrderItems;
+        private int currentEmployeeId;
 
-        public class OrderItem
-        {
-            public int MenuItemId { get; set; }
-            public string ItemName { get; set; }
-            public int Quantity { get; set; }
-            public decimal UnitPrice { get; set; }
-            public decimal Subtotal => Quantity * UnitPrice;
-        }
-
-        public OrderTakingWindow(int accessLevel)
+        public OrderTakingWindow(int accessLevel, int employeeId = 0)
         {
             InitializeComponent();
+            _context = new cafe_barEntities();
 
-            if (!App.UserContext.IsAuthenticated)
-            {
-                MessageBox.Show("Требуется авторизация");
-                var authWindow = new autorization();
-                authWindow.Show();
-                this.Close();
-                return;
-            }
+            var menuRepo = new Repository<Menu>(_context);
+            var categoryRepo = new Repository<CategoriesMenu>(_context);
+            var clientRepo = new Repository<Clients>(_context);
+            var orderRepo = new Repository<Orders>(_context);
+            var orderDetailsRepo = new Repository<Order_details>(_context);
+            var employeeRepo = new Repository<Employees>(_context);
+            var postRepo = new Repository<Post>(_context);
 
-            db = new cafe_barEntities();
-            currentOrderItems = new List<OrderItem>();
+            _orderService = new OrderService(
+                menuRepo,
+                categoryRepo,
+                clientRepo,
+                orderRepo,
+                orderDetailsRepo,
+                employeeRepo,
+                postRepo);
 
+            currentEmployeeId = employeeId;
+            currentOrderItems = new List<OrderItemDto>();
+
+            // Сначала загружаем данные для ComboBox, потом загружаем меню
             InitializeData();
-            LoadMenuItems();
+
+            // Небольшая задержка для гарантии, что UI обновился
+            Dispatcher.BeginInvoke(new Action(() => LoadMenuItems()), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         private void InitializeData()
         {
-            var categories = db.CategoriesMenu.ToList();
+            // Категории
+            var categories = _orderService.GetCategories();
             cbCategories.Items.Clear();
             cbCategories.Items.Add(new ComboBoxItem { Content = "Все категории", Tag = 0 });
-
             foreach (var category in categories)
             {
                 cbCategories.Items.Add(new ComboBoxItem
@@ -58,67 +65,66 @@ namespace material_design
             }
             cbCategories.SelectedIndex = 0;
 
-            var clients = db.Clients.ToList();
+            // Клиенты
+            var clients = _orderService.GetClients();
             cbClients.ItemsSource = clients;
             cbClients.DisplayMemberPath = "name_client";
             cbClients.SelectedValuePath = "id_client";
 
-            var employees = db.Employees
-                .Where(e => e.Post.title_post == "Официант" || e.Post.title_post == "Бармен")
-                .ToList();
+            // Сотрудники
+            var employees = _orderService.GetEmployees();
             cbEmployees.ItemsSource = employees;
             cbEmployees.DisplayMemberPath = "name_employee";
             cbEmployees.SelectedValuePath = "id_employee";
 
-            if (App.UserContext.IsAuthenticated)
+            // Текущий пользователь (если передан employeeId)
+            if (currentEmployeeId > 0)
             {
-                tbCurrentUser.Text = $"{App.UserContext.UserName} ({App.UserContext.UserRole})";
-
-                var currentUser = employees.FirstOrDefault(e =>
-                    e.name_employee.Contains(App.UserContext.UserName) ||
-                    e.email.Contains(App.UserContext.UserName));
-
-                if (currentUser != null)
+                var employee = employees.FirstOrDefault(e => e.id_employee == currentEmployeeId);
+                if (employee != null)
                 {
-                    cbEmployees.SelectedValue = currentUser.id_employee;
-                }
-                else if (employees.Count > 0)
-                {
-                    cbEmployees.SelectedIndex = 0;
+                    tbCurrentUser.Text = $"Официант: {employee.name_employee}";
+                    cbEmployees.SelectedValue = currentEmployeeId; // автоматически выбираем
                 }
             }
         }
 
         private void LoadMenuItems()
         {
-            var query = db.Menu.Include(m => m.CategoriesMenu).AsQueryable();
-
-            if (cbCategories.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is int categoryId && categoryId > 0)
+            try
             {
-                query = query.Where(m => m.id_category_fk == categoryId);
-            }
+                // Защита от вызова до инициализации
+                if (_orderService == null)
+                {
+                    MessageBox.Show("Сервис не инициализирован");
+                    return;
+                }
 
-            if (!string.IsNullOrEmpty(tbSearch.Text) && tbSearch.Text != "Поиск...")
+                int? categoryId = null;
+                if (cbCategories.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is int catId && catId > 0)
+                    categoryId = catId;
+
+                string search = tbSearch.Text == "Поиск..." ? null : tbSearch.Text;
+
+                var items = _orderService.GetMenuItems(categoryId, search);
+                dgMenu.ItemsSource = items;
+            }
+            catch (Exception ex)
             {
-                query = query.Where(m => m.item_name.Contains(tbSearch.Text));
+                MessageBox.Show($"Ошибка в LoadMenuItems: {ex.Message}\n\n{ex.StackTrace}");
             }
-
-            dgMenu.ItemsSource = query.OrderBy(m => m.item_name).ToList();
         }
 
         private void AddToOrder_Click(object sender, RoutedEventArgs e)
         {
             if (dgMenu.SelectedItem is Menu selectedItem)
             {
-                var existingItem = currentOrderItems.FirstOrDefault(i => i.MenuItemId == selectedItem.id_menu_item);
-
-                if (existingItem != null)
-                {
-                    existingItem.Quantity++;
-                }
+                var existing = currentOrderItems.FirstOrDefault(i => i.MenuItemId == selectedItem.id_menu_item);
+                if (existing != null)
+                    existing.Quantity++;
                 else
                 {
-                    currentOrderItems.Add(new OrderItem
+                    currentOrderItems.Add(new OrderItemDto
                     {
                         MenuItemId = selectedItem.id_menu_item,
                         ItemName = selectedItem.item_name,
@@ -126,7 +132,6 @@ namespace material_design
                         UnitPrice = selectedItem.cost_item
                     });
                 }
-
                 RefreshOrderItems();
                 UpdateOrderTotal();
             }
@@ -134,7 +139,7 @@ namespace material_design
 
         private void RemoveFromOrder_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.DataContext is OrderItem item)
+            if (sender is Button button && button.DataContext is OrderItemDto item)
             {
                 currentOrderItems.Remove(item);
                 RefreshOrderItems();
@@ -150,7 +155,7 @@ namespace material_design
 
         private void UpdateOrderTotal()
         {
-            decimal total = currentOrderItems.Sum(item => item.Subtotal);
+            decimal total = currentOrderItems.Sum(i => i.Subtotal);
             tbOrderTotal.Text = $"Итого: {total:C}";
         }
 
@@ -166,154 +171,43 @@ namespace material_design
         {
             if (cbClients.SelectedValue == null)
             {
-                MessageBox.Show("Выберите клиента!", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                cbClients.Focus();
+                MessageBox.Show("Выберите клиента!");
                 return;
             }
-
             if (cbEmployees.SelectedValue == null)
             {
-                MessageBox.Show("Выберите сотрудника!", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                cbEmployees.Focus();
+                MessageBox.Show("Выберите сотрудника!");
                 return;
             }
-
             if (currentOrderItems.Count == 0)
             {
-                MessageBox.Show("Добавьте позиции в заказ!", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Добавьте позиции в заказ!");
                 return;
             }
 
             try
             {
-                int clientId = (int)cbClients.SelectedValue;
-                int employeeId = (int)cbEmployees.SelectedValue;
-
-                var clientExists = db.Clients.Any(c => c.id_client == clientId);
-                var employeeExists = db.Employees.Any(emp => emp.id_employee == employeeId); 
-
-                if (!clientExists)
-                {
-                    MessageBox.Show("Выбранный клиент не найден в базе данных!", "Ошибка",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                if (!employeeExists)
-                {
-                    MessageBox.Show("Выбранный сотрудник не найден в базе данных!", "Ошибка",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
                 var order = new Orders
                 {
-                    id_cli_fk = clientId,
-                    id_emp_fk = employeeId,
+                    id_cli_fk = (int)cbClients.SelectedValue,
+                    id_emp_fk = (int)cbEmployees.SelectedValue,
                     order_date = DateTime.Now,
-                    totalAmount = currentOrderItems.Sum(item => item.Subtotal)
+                    totalAmount = currentOrderItems.Sum(i => i.Subtotal)
                 };
 
-                db.Orders.Add(order);
-                db.SaveChanges();
+                _orderService.CreateOrder(order, currentOrderItems);
 
-                foreach (var item in currentOrderItems)
-                {
-                    var orderDetail = new Order_details
-                    {
-                        id_order_fk = order.id_order,
-                        id_menu_item_fk = item.MenuItemId,
-                        quantity = (short)item.Quantity,
-                        unit_price = item.UnitPrice
-                    };
-                    db.Order_details.Add(orderDetail);
-                }
-
-                db.SaveChanges();
-
-                CheckAndAddRegularClient(clientId);
-
-                MessageBox.Show($"Заказ №{order.id_order} успешно создан!\n" +
-                              $"Клиент: {cbClients.Text}\n" +
-                              $"Сотрудник: {cbEmployees.Text}\n" +
-                              $"Сумма: {order.totalAmount:C}",
-                              "Успех",
-                              MessageBoxButton.OK,
-                              MessageBoxImage.Information);
+                MessageBox.Show($"Заказ №{order.id_order} успешно создан на сумму {order.totalAmount:C}");
 
                 ClearOrder_Click(sender, e);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка создания заказа: {ex.Message}",
-                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка создания заказа: {ex.Message}");
             }
         }
-
-        private void CheckAndAddRegularClient(int clientId)
-        {
-            try
-            {
-                var isRegular = db.Regular_Clients.Any(rc => rc.id_reg_client_fk == clientId);
-
-                if (!isRegular)
-                {
-                    decimal totalSpent = db.Orders
-                        .Where(o => o.id_cli_fk == clientId)
-                        .Sum(o => o.totalAmount);
-
-                    int orderCount = db.Orders
-                        .Where(o => o.id_cli_fk == clientId)
-                        .Count();
-
-                    if (orderCount >= 5 || totalSpent >= 10000)
-                    {
-                        decimal discountRate = 0;
-
-                        if (totalSpent >= 30000)
-                            discountRate = 15.00m;
-                        else if (totalSpent >= 20000)
-                            discountRate = 10.00m;
-                        else if (totalSpent >= 10000)
-                            discountRate = 5.00m;
-
-                        var regularClient = new Regular_Clients
-                        {
-                            id_reg_client_fk = clientId,
-                            discount_rate = discountRate,
-                            total_spent = totalSpent
-                        };
-
-                        db.Regular_Clients.Add(regularClient);
-                        db.SaveChanges();
-
-                        MessageBox.Show($"Клиент добавлен в программу лояльности!\n" +
-                                      $"Скидка: {discountRate}%",
-                                      "Информация",
-                                      MessageBoxButton.OK,
-                                      MessageBoxImage.Information);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка обработки лояльности: {ex.Message}");
-            }
-        }
-
-        private void NewOrder_Click(object sender, RoutedEventArgs e)
-        {
-            ClearOrder_Click(sender, e);
-        }
-
-        private void ActiveOrders_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("Просмотр активных заказов - функция в разработке",
-                "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
+        private void NewOrder_Click(object sender, RoutedEventArgs e) => ClearOrder_Click(sender, e);
+        private void ActiveOrders_Click(object sender, RoutedEventArgs e) => MessageBox.Show("Просмотр активных заказов - функция в разработке");
 
         private void SearchBox_GotFocus(object sender, RoutedEventArgs e)
         {
@@ -335,33 +229,24 @@ namespace material_design
             }
         }
 
-        private void tbSearch_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            LoadMenuItems();
-        }
-
-        private void cbCategories_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            LoadMenuItems();
-        }
+        private void tbSearch_TextChanged(object sender, TextChangedEventArgs e) => LoadMenuItems();
+        private void cbCategories_SelectionChanged(object sender, SelectionChangedEventArgs e) => LoadMenuItems();
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            if (App.UserContext.IsAuthenticated)
-            {
-                var mainDashboard = new MainDashboard(
-                    App.UserContext.UserName,
-                    App.UserContext.UserRole,
-                    App.UserContext.AccessLevel);
-                mainDashboard.Show();
-            }
+            if (Appp.CurrentUser != null)
+                new MainDashboard(Appp.CurrentUser.Login, AccessControl.GetRoleName(Appp.CurrentUser.accessLevel), Appp.CurrentUser.accessLevel).Show();
             else
-            {
-                var authWindow = new autorization();
-                authWindow.Show();
-            }
-
+                new MainDashboard().Show();
             this.Close();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _context?.Dispose();
         }
     }
 }
+
+

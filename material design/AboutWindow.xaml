@@ -1,0 +1,29 @@
+﻿<Window x:Class="material_design.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="О программе" Height="350" Width="450"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="#F5F5F5">
+    <StackPanel Margin="20">
+        <TextBlock Text="Cafe Bar Management System" FontSize="20" FontWeight="Bold" 
+                   Foreground="#2C3E50" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+        <TextBlock Text="Версия 2.0" FontSize="14" Foreground="#7F8C8D" 
+                   HorizontalAlignment="Center" Margin="0,0,0,20"/>
+        <Separator Margin="0,0,0,15"/>
+        <TextBlock Text="Возможности системы:" FontWeight="Bold" Margin="0,0,0,10"/>
+        <TextBlock Text="• Управление сотрудниками, графиком работы" Margin="20,2,0,2"/>
+        <TextBlock Text="• Приём и обработка заказов" Margin="20,2,0,2"/>
+        <TextBlock Text="• Управление меню и категориями" Margin="20,2,0,2"/>
+        <TextBlock Text="• Бронирование столов" Margin="20,2,0,2"/>
+        <TextBlock Text="• Формирование отчётов и аналитика" Margin="20,2,0,2"/>
+        <TextBlock Text="• Резервное копирование и восстановление БД" Margin="20,2,0,2"/>
+        <TextBlock Text="• Разграничение прав доступа" Margin="20,2,0,2"/>
+        <Separator Margin="0,15,0,15"/>
+        <TextBlock Text="© 2025 Cafe Bar Management System" FontSize="11" 
+                   Foreground="#7F8C8D" HorizontalAlignment="Center"/>
+        <Button Content="OK" Width="100" Height="30" Margin="0,20,0,0"
+                HorizontalAlignment="Center" Click="OkButton_Click"
+                Background="#2C3E50" Foreground="White" BorderThickness="0"
+                Cursor="Hand"/>
+    </StackPanel>
+</Window>

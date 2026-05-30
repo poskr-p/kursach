@@ -1,39 +1,38 @@
-﻿using System;
-using System.Data.Entity;
+﻿using material_design.Repositories;
+using material_design.Services;
+using System;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace material_design
 {
     public partial class ReservationManagementWindow : Window
     {
-        private cafe_barEntities db;
-        private Reservation currentReservation;
+        private readonly cafe_barEntities _context;
+        private readonly IReservationService _reservationService;
+        private Reservation _currentReservation;
 
         public ReservationManagementWindow()
         {
-            if (!App.UserContext.IsAuthenticated)
-            {
-                MessageBox.Show("Требуется авторизация");
-                var authWindow = new autorization();
-                authWindow.Show();
-                this.Close();
-                return;
-            }
-
-            db = new cafe_barEntities();
+            InitializeComponent();
+            _context = new cafe_barEntities();
+            var reservationRepo = new Repository<Reservation>(_context);
+            var clientRepo = new Repository<Clients>(_context);
+            var employeeRepo = new Repository<Employees>(_context);
+            _reservationService = new ReservationService(reservationRepo, clientRepo, employeeRepo);
             InitializeData();
             LoadReservations();
         }
 
         private void InitializeData()
         {
-            var clients = db.Clients.ToList();
+            var clients = _reservationService.GetClients();
             cbClient.ItemsSource = clients;
             cbClient.DisplayMemberPath = "name_client";
             cbClient.SelectedValuePath = "id_client";
 
-            var employees = db.Employees
+            var employees = _reservationService.GetEmployees()
                 .Where(e => e.Post.title_post == "Администратор" || e.Post.title_post == "Официант")
                 .ToList();
             cbEmployee.ItemsSource = employees;
@@ -41,17 +40,14 @@ namespace material_design
             cbEmployee.SelectedValuePath = "id_employee";
 
             dpReservationDate.SelectedDate = DateTime.Today;
-            cbReservationTime.SelectedIndex = 2; // 19:00 по умолчанию
+            cbReservationTime.SelectedIndex = 2;
         }
 
         private void LoadReservations()
         {
-            var reservations = db.Reservation
-                .Include(r => r.Clients)
-                .Include(r => r.Employees)
+            var reservations = _reservationService.GetAllReservations()
                 .OrderByDescending(r => r.reservation_date)
                 .ToList();
-
             dgReservations.ItemsSource = reservations;
         }
 
@@ -59,128 +55,42 @@ namespace material_design
         {
             try
             {
-                if (cbClient.SelectedValue == null)
-                {
-                    MessageBox.Show("Выберите клиента!", "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    cbClient.Focus();
-                    return;
-                }
-
-                if (cbEmployee.SelectedValue == null)
-                {
-                    MessageBox.Show("Выберите сотрудника!", "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    cbEmployee.Focus();
-                    return;
-                }
-
-                if (!int.TryParse(txtGuestsCount.Text, out int guestsCount) || guestsCount < 1 || guestsCount > 20)
-                {
-                    MessageBox.Show("Введите корректное количество гостей (от 1 до 20)!",
-                        "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    txtGuestsCount.Focus();
-                    txtGuestsCount.SelectAll();
-                    return;
-                }
-
-                if (dpReservationDate.SelectedDate == null)
-                {
-                    MessageBox.Show("Выберите дату!", "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    dpReservationDate.Focus();
-                    return;
-                }
+                if (cbClient.SelectedValue == null) { MessageBox.Show("Выберите клиента!"); return; }
+                if (cbEmployee.SelectedValue == null) { MessageBox.Show("Выберите сотрудника!"); return; }
+                if (!int.TryParse(txtGuestsCount.Text, out int guests) || guests < 1 || guests > 20)
+                { MessageBox.Show("Введите корректное количество гостей (1-20)!"); return; }
+                if (dpReservationDate.SelectedDate == null) { MessageBox.Show("Выберите дату!"); return; }
 
                 DateTime selectedDate = dpReservationDate.SelectedDate.Value;
-                if (selectedDate < DateTime.Today)
-                {
-                    MessageBox.Show("Нельзя создавать бронирование на прошедшую дату!",
-                        "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    dpReservationDate.Focus();
-                    return;
-                }
+                if (selectedDate < DateTime.Today) 
+                { MessageBox.Show("Нельзя создавать бронирование на прошедшую дату!"); return; }
 
-                string timeStr = (cbReservationTime.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content?.ToString();
-                if (string.IsNullOrEmpty(timeStr))
-                {
-                    MessageBox.Show("Выберите время!", "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    cbReservationTime.Focus();
-                    return;
-                }
+                string timeStr = (cbReservationTime.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                if (string.IsNullOrEmpty(timeStr)) { MessageBox.Show("Выберите время!"); return; }
 
                 if (!DateTime.TryParse($"{selectedDate:yyyy-MM-dd} {timeStr}", out DateTime reservationDateTime))
-                {
-                    MessageBox.Show("Ошибка формирования даты и времени!",
-                        "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                { MessageBox.Show("Ошибка формирования даты и времени!"); return; }
 
-                TimeSpan time = reservationDateTime.TimeOfDay;
-                if (time < TimeSpan.FromHours(10) || time > TimeSpan.FromHours(22))
-                {
-                    MessageBox.Show("Бронирование возможно только с 10:00 до 22:00!",
-                        "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                int clientId = (int)cbClient.SelectedValue;
-                int employeeId = (int)cbEmployee.SelectedValue;
-
-                var clientExists = db.Clients.Any(c => c.id_client == clientId);
-                var employeeExists = db.Employees.Any(emp => emp.id_employee == employeeId);
-
-                if (!clientExists)
-                {
-                    MessageBox.Show("Выбранный клиент не найден в базе!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                if (!employeeExists)
-                {
-                    MessageBox.Show("Выбранный сотрудник не найден в базе!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                if (currentReservation == null)
+                if (_currentReservation == null)
                 {
                     var newReservation = new Reservation
                     {
-                        id_client_fk = clientId,
-                        id_employee_fk = employeeId,
+                        id_client_fk = (int)cbClient.SelectedValue,
+                        id_employee_fk = (int)cbEmployee.SelectedValue,
                         reservation_date = reservationDateTime,
-                        guests_count = (byte)guestsCount
+                        guests_count = (byte)guests
                     };
-
-                    db.Reservation.Add(newReservation);
-
-                    try
-                    {
-                        db.SaveChanges();
-                        MessageBox.Show("Бронирование успешно добавлено!", "Успех",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    catch (System.Data.Entity.Infrastructure.DbUpdateException dbEx)
-                    {
-                        ExceptionHelper.ShowErrorMessage(dbEx, "добавления бронирования");
-                        return;
-                    }
+                    _reservationService.AddReservation(newReservation);
+                    MessageBox.Show("Бронирование успешно добавлено!", "Успех");
                 }
                 else
                 {
-                    currentReservation.id_client_fk = clientId;
-                    currentReservation.id_employee_fk = employeeId;
-                    currentReservation.reservation_date = reservationDateTime;
-                    currentReservation.guests_count = (byte)guestsCount;
-
-                    try
-                    {
-                        db.SaveChanges();
-                        MessageBox.Show("Бронирование успешно обновлено!", "Успех",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    catch (System.Data.Entity.Infrastructure.DbUpdateException dbEx)
-                    {
-                        ExceptionHelper.ShowErrorMessage(dbEx, "обновления бронирования");
-                        return;
-                    }
+                    _currentReservation.id_client_fk = (int)cbClient.SelectedValue;
+                    _currentReservation.id_employee_fk = (int)cbEmployee.SelectedValue;
+                    _currentReservation.reservation_date = reservationDateTime;
+                    _currentReservation.guests_count = (byte)guests;
+                    _reservationService.UpdateReservation(_currentReservation);
+                    MessageBox.Show("Бронирование успешно обновлено!", "Успех");
                 }
 
                 LoadReservations();
@@ -191,22 +101,20 @@ namespace material_design
                 ExceptionHelper.ShowErrorMessage(ex, "сохранения бронирования");
             }
         }
+
         private void DeleteReservation_Click(object sender, RoutedEventArgs e)
         {
-            if (currentReservation == null) return;
-
+            if (_currentReservation == null) return;
             try
             {
                 var result = MessageBox.Show("Вы уверены, что хотите удалить это бронирование?",
                     "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
                 if (result == MessageBoxResult.Yes)
                 {
-                    db.Reservation.Remove(currentReservation);
-                    db.SaveChanges();
-                    MessageBox.Show("Бронирование успешно удалено!");
+                    _reservationService.DeleteReservation(_currentReservation.id_reservation);
                     LoadReservations();
                     ClearForm();
+                    MessageBox.Show("Бронирование успешно удалено!");
                 }
             }
             catch (Exception ex)
@@ -215,14 +123,11 @@ namespace material_design
             }
         }
 
-        private void ClearForm_Click(object sender, RoutedEventArgs e)
-        {
-            ClearForm();
-        }
+        private void ClearForm_Click(object sender, RoutedEventArgs e) => ClearForm();
 
         private void ClearForm()
         {
-            currentReservation = null;
+            _currentReservation = null;
             cbClient.SelectedIndex = -1;
             cbEmployee.SelectedIndex = -1;
             dpReservationDate.SelectedDate = DateTime.Today;
@@ -230,18 +135,18 @@ namespace material_design
             txtGuestsCount.Text = "";
         }
 
-        private void dgReservations_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void dgReservations_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (dgReservations.SelectedItem is Reservation reservation)
             {
-                currentReservation = reservation;
+                _currentReservation = reservation;
                 cbClient.SelectedValue = reservation.id_client_fk;
                 cbEmployee.SelectedValue = reservation.id_employee_fk;
                 dpReservationDate.SelectedDate = reservation.reservation_date;
                 txtGuestsCount.Text = reservation.guests_count.ToString();
 
                 string timeStr = reservation.reservation_date.ToString("HH:mm");
-                foreach (System.Windows.Controls.ComboBoxItem item in cbReservationTime.Items)
+                foreach (ComboBoxItem item in cbReservationTime.Items)
                 {
                     if (item.Content.ToString() == timeStr)
                     {
@@ -254,22 +159,23 @@ namespace material_design
 
         private void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
-            if (App.UserContext.IsAuthenticated)
-            {
-                var mainDashboard = new MainDashboard(
-                    App.UserContext.UserName,
-                    App.UserContext.UserRole,
-                    App.UserContext.AccessLevel);
-                mainDashboard.Show();
-            }
+            if (Appp.CurrentUser != null)
+                new MainDashboard(Appp.CurrentUser.Login, AccessControl.GetRoleName(Appp.CurrentUser.accessLevel), Appp.CurrentUser.accessLevel).Show();
             else
-            {
-                var authWindow = new autorization();
-                authWindow.Show();
-            }
-
+                new MainDashboard().Show();
             this.Close();
         }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _context?.Dispose();
+        }
     }
-    
 }
+
+
+
+
+
+
